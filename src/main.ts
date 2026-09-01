@@ -70,12 +70,36 @@ async function main(): Promise<void> {
     warmUpVoice(loading, piper),
   ]);
 
-  await loading.waitForEnter();
+  // A reload mid-show (dev server, host re-navigation) must not demand a second Enter.
+  if (enteredThisSession()) {
+    console.info('resuming: page reloaded after Enter');
+  } else {
+    await loading.waitForEnter();
+    rememberEntered();
+  }
   loading.hide();
 
   stage.start();
   ambience.start();
   doors.fire(true);
+}
+
+const ENTERED_KEY = 'openmic.entered';
+
+function enteredThisSession(): boolean {
+  try {
+    return sessionStorage.getItem(ENTERED_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function rememberEntered(): void {
+  try {
+    sessionStorage.setItem(ENTERED_KEY, '1');
+  } catch {
+    // storage unavailable; the next reload asks again
+  }
 }
 
 function wireShow(

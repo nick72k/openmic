@@ -54,7 +54,8 @@ Each layer talks only to the one below it.
 While assets load the canvas shows the lobby (`src/stage/lobby.ts`): the
 marquee floating in a starfield with chasing bulbs. `src/ui/loading.ts` draws one weighted
 bar under it (stage 25 %, sound 15 %, voice 60 %) and swaps it for the Enter
-button when everything is in. That click is
+button when everything is in. A reload in the same tab skips Enter: the
+earlier click already satisfied the browser's autoplay rule. That click is
 also the user gesture browsers require before audio may play. Tools are
 registered at page load regardless (some hosts enumerate them only once);
 `begin_set` before Enter returns `pending` telling the agent to ask the user
