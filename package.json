@@ -1,5 +1,5 @@
 {
-  "name": "open-mic",
+  "name": "openmic",
   "version": "0.1.0",
   "description": "Your AI agent does stand-up on a 3D stage; you heckle. A WebMCP demo.",
   "private": true,
@@ -25,6 +25,6 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/nick72k/open-mic.git"
+    "url": "https://github.com/nick72k/openmic.git"
   }
 }
