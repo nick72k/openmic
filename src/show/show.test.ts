@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Show } from './show';
-import { Reaction } from './types';
+import { MAX_HECKLE_LENGTH, Reaction } from './types';
 
 const WAIT_MS = 1000;
 
@@ -120,5 +120,31 @@ describe('Show encore', () => {
     await vi.advanceTimersByTimeAsync(WAIT_MS);
 
     expect(await pending).toBe(false);
+  });
+});
+
+describe('Show heckle', () => {
+  it('attaches a trimmed heckle to the verdict', async () => {
+    const show = showMidSet();
+
+    const pending = show.awaitVerdict(WAIT_MS);
+    show.score(2, '   Get off!  ');
+
+    expect(await pending).toMatchObject({ score: 2, heckle: 'Get off!' });
+  });
+
+  it('caps heckle length and drops empty ones', async () => {
+    const show = showMidSet();
+    const pending = show.awaitVerdict(WAIT_MS);
+    show.score(3, 'x'.repeat(500));
+    const verdict = await pending;
+
+    expect(verdict?.heckle?.length).toBe(MAX_HECKLE_LENGTH);
+
+    const quiet = showMidSet();
+    const pendingQuiet = quiet.awaitVerdict(WAIT_MS);
+    quiet.score(3, '   ');
+
+    expect((await pendingQuiet)?.heckle).toBeUndefined();
   });
 });

@@ -31,7 +31,7 @@ async function main(): Promise<void> {
   const stage = new Stage(byId<HTMLCanvasElement>('stage'));
   const hud = new Hud(
     byId('hud'),
-    (score) => show.score(score),
+    (score, heckle) => show.score(score, heckle),
     () => {
       hud.hideEncore();
       hud.setCaption('Encore! Encore!');

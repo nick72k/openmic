@@ -1,6 +1,7 @@
 import { Latch } from './latch';
 import {
   JOKES_PER_SET,
+  MAX_HECKLE_LENGTH,
   MAX_SCORE,
   MIN_SCORE,
   REACTION_BY_SCORE,
@@ -113,14 +114,14 @@ export class Show {
     }
   }
 
-  /** Called by UI when the audience presses a button. */
-  score(value: number): void {
+  /** Called by UI when the audience presses a button, optionally shouting something. */
+  score(value: number, heckle?: string): void {
     if (this.phase !== ShowPhase.AwaitingScore) {
       return;
     }
 
     const clamped = Math.min(MAX_SCORE, Math.max(MIN_SCORE, Math.round(value)));
-    this.applyScore(clamped);
+    this.applyScore(clamped, cleanHeckle(heckle));
   }
 
   /** Resolves once presentation layers have finished the exit. */
@@ -135,10 +136,11 @@ export class Show {
     await this.emit('ended');
   }
 
-  private applyScore(score: number): Verdict {
+  private applyScore(score: number, heckle: string | undefined): Verdict {
     const verdict: Verdict = {
       score,
       reaction: REACTION_BY_SCORE[score] ?? Reaction.Chuckles,
+      ...(heckle ? { heckle } : {}),
       jokesTold: this.jokes.length,
       jokesRemaining: this.jokesRemaining(),
     };
@@ -164,4 +166,9 @@ export class Show {
     );
     await Promise.all(results);
   }
+}
+
+function cleanHeckle(raw: string | undefined): string | undefined {
+  const heckle = raw?.replace(/\s+/g, ' ').trim().slice(0, MAX_HECKLE_LENGTH);
+  return heckle ? heckle : undefined;
 }

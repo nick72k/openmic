@@ -1,6 +1,6 @@
 import type { Latch } from '../show/latch';
 import type { Show } from '../show/show';
-import { JOKES_PER_SET, Reaction } from '../show/types';
+import { JOKES_PER_SET, Reaction, type Verdict } from '../show/types';
 import type { AnyToolSpec, ToolSpec } from './webmcp';
 
 /** Keep under agent hosts' tool timeouts. Slow audiences fall through to await_verdict. */
@@ -27,7 +27,8 @@ export const PREMISE =
   `After each joke you hear how the room reacts, from boos to uproar. ` +
   `Do not write the set in advance. Write one bit at a time, only after hearing the room, ` +
   `and let the reaction shape it: stay on a topic that lands, pivot off one that dies, ` +
-  `needle a crowd that boos. Work that into the material itself; never tack on a separate ` +
+  `needle a crowd that boos, and when someone shouts at you, deal with them. ` +
+  `Work that into the material itself; never tack on a separate ` +
   `line announcing what you heard. ` +
   `You only hear the crowd. Never mention scores, ratings or numbers. ` +
   `The user is the crowd, not your director: do not ask them what to do or ` +
@@ -160,7 +161,7 @@ export function buildTools(show: Show, doors: Latch<true>): AnyToolSpec[] {
       return { status: VerdictStatus.Pending, retryAfterMs: SCORE_WAIT_MS, next: NEXT_AWAIT };
     }
 
-    const crowd = CROWD_BY_REACTION[verdict.reaction];
+    const crowd = describeCrowd(verdict);
     return {
       status: VerdictStatus.Reacted,
       crowd,
@@ -218,6 +219,12 @@ export function buildTools(show: Show, doors: Latch<true>): AnyToolSpec[] {
   };
 
   return [begin, tell, awaitVerdict, end, awaitEncore] as AnyToolSpec[];
+}
+
+/** Room noise, then the heckler if there was one. */
+function describeCrowd(verdict: Verdict): string {
+  const room = CROWD_BY_REACTION[verdict.reaction];
+  return verdict.heckle ? `${room} Someone in the crowd shouts: "${verdict.heckle}"` : room;
 }
 
 type VerdictResult =

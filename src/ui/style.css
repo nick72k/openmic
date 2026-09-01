@@ -119,6 +119,44 @@ button:focus-visible {
 #rating button[data-score='4']:hover { background: #2a9d8f; color: var(--bg); }
 #rating button[data-score='5']:hover { background: var(--bulb); color: var(--bg); }
 
+#rating button[data-heckle] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+#rating button[data-heckle]:hover {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+#heckle {
+  pointer-events: auto;
+  width: min(30rem, calc(100vw - 3rem));
+}
+
+#heckle input {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: var(--body);
+  font-size: 1.5rem;
+  padding: 0.4rem 0.8rem;
+  border: var(--px) solid var(--accent);
+  border-radius: 0;
+  background: var(--bg);
+  color: var(--fg);
+  box-shadow: var(--px) var(--px) 0 var(--ink);
+}
+
+#heckle input::placeholder {
+  color: var(--fg);
+  opacity: 0.45;
+}
+
+#heckle input:focus-visible {
+  outline: var(--px) dashed var(--bulb);
+  outline-offset: var(--px);
+}
+
 #encore {
   pointer-events: auto;
   font-size: 1rem;

@@ -4,6 +4,9 @@ export const JOKES_PER_SET = 5;
 export const MIN_SCORE = 1;
 export const MAX_SCORE = 5;
 
+/** A shout, not a speech. */
+export const MAX_HECKLE_LENGTH = 120;
+
 export enum ShowPhase {
   Idle = 'idle',
   Intro = 'intro',
@@ -39,6 +42,7 @@ export interface Joke {
 export interface Verdict {
   score: number;
   reaction: Reaction;
+  heckle?: string;
   jokesTold: number;
   jokesRemaining: number;
 }

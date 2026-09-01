@@ -17,7 +17,7 @@ agent ──WebMCP──► begin_set / tell_joke / await_verdict / end_set / aw
           ┌─────────────┼─────────────┐
           ▼             ▼             ▼
         Stage         Audio          HUD
-      (Three.js)   (TTS, crowd)   (caption, 1-5)
+      (Three.js)   (TTS, crowd)   (caption, 1-5, heckle)
                                       │
                     score ◄───────────┘
 ```

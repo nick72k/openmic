@@ -66,3 +66,17 @@ describe('await_encore', () => {
     expect(spoken).toEqual(['']);
   });
 });
+
+describe('heckle', () => {
+  it('reaches the agent as a shout from the crowd', async () => {
+    const { show, tool } = await onStage();
+
+    const pending = tool.tell_joke.execute({ text: 'opener' }, signal);
+    show.readyForScore();
+    show.score(3, 'Get a real job!');
+    const result = (await pending) as { crowd: string; next: string };
+
+    expect(result.crowd).toContain('Someone in the crowd shouts: "Get a real job!"');
+    expect(result.next).toContain('Get a real job!');
+  });
+});
