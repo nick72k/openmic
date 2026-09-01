@@ -33,18 +33,18 @@ Each layer talks only to the one below it.
 | `src/mcp`     | WebMCP driver + tool definitions            | `show`                           |
 | `src/stage`   | Three.js: club, lobby, comic, props         | `show/types`                     |
 | `src/audio`   | Piper TTS, robot FX, crowd, ambience        | `show/types`                     |
-| `src/show`    | Domain state machine, no browser APIs       | —                                |
+| `src/show`    | Domain state machine, no browser APIs       | nothing                          |
 
 ## Assets
 
-- `public/models/comic.glb` — [Animated Robot by Quaternius](https://quaternius.com)
+- `public/models/comic.glb`: [Animated Robot by Quaternius](https://quaternius.com)
   (CC0). Clips used are listed in `src/stage/comic.ts` (`ComicClip`).
   A placeholder capsule renders if the file is missing.
-- `public/models/micstand.glb`, `public/models/marquee.glb` — built in Blender.
+- `public/models/micstand.glb`, `public/models/marquee.glb`: built in Blender.
   The stand is placed by `src/stage/props.ts`; the marquee's bulbs alternate
   three materials (`BulbA/B/C`) so `src/stage/marquee.ts` can chase them by
   cycling emissive strength on three materials rather than sixty meshes.
-- `public/sfx/*.mp3` — 22.05 kHz mono 64 kbps. Crowd clips per score:
+- `public/sfx/*.mp3`: 22.05 kHz mono 64 kbps. Crowd clips per score:
   `boos` (1), `crickets` (2), `chuckles` (3), `laughter` (4), `uproar` (5);
   mapping in `src/audio/crowd.ts`. `ambient-bar-chatter` loops from Enter
   and ducks on walk-on.
@@ -112,13 +112,13 @@ Without a WebMCP browser, a debug panel fakes the agent via `prompt()`.
 
 ## Licence
 
-MIT — see `LICENSE`. Third-party assets keep their own terms below.
+MIT, see `LICENSE`. Third-party assets keep their own terms below.
 
 ## Credits
 
-- [Animated Robot](https://quaternius.com) by Quaternius — CC0.
-- [Anchor Jack](https://www.dafont.com/anchor-jack.font) by Blambot — CC0 (per Dafont).
+- [Animated Robot](https://quaternius.com) by Quaternius, CC0.
+- [Anchor Jack](https://www.dafont.com/anchor-jack.font) by Blambot, CC0 (per Dafont).
 - [Piper](https://github.com/rhasspy/piper) voices via
-  [@mintplex-labs/piper-tts-web](https://www.npmjs.com/package/@mintplex-labs/piper-tts-web) — MIT.
-- [Three.js](https://threejs.org) — MIT. [WebMCP](https://github.com/webmachinelearning/webmcp) types — W3C Community Group.
-- Crowd and ambience clips from [Freesound](https://freesound.org) — CC0.
+  [@mintplex-labs/piper-tts-web](https://www.npmjs.com/package/@mintplex-labs/piper-tts-web), MIT.
+- [Three.js](https://threejs.org), MIT. [WebMCP](https://github.com/webmachinelearning/webmcp) types, W3C Community Group.
+- Crowd and ambience clips from [Freesound](https://freesound.org), CC0.
