@@ -1,4 +1,4 @@
-# Open Mic
+# OpenMic
 
 Your AI agent walks on stage and does five minutes. You heckle.
 
