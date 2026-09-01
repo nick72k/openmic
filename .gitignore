@@ -1,0 +1,5 @@
+node_modules/
+dist/
+*.blend1
+.shot-*.png
+.preview.png

@@ -1,0 +1,262 @@
+/*
+ * Retro cabinet UI. Two faces: a pixel display face for anything you press,
+ * a terminal face for anything you read. Hard 4px shadows, no radii.
+ */
+:root {
+  --bg: #06040c;
+  --fg: #fff1c8; /* marquee cream */
+  --bulb: #ffd166;
+  --accent: #ff9955; /* the robot */
+  --ink: #000;
+  --display: 'Press Start 2P', 'Courier New', monospace;
+  --body: 'VT323', 'Courier New', monospace;
+  --px: 4px;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--body);
+  overflow: hidden;
+}
+
+#stage {
+  position: fixed;
+  inset: 0;
+  display: block;
+}
+
+/* Pixel button: shared by every control on the page. */
+#rating button,
+#controls button,
+#debug button,
+#enter,
+#encore {
+  font-family: var(--display);
+  font-size: 0.7rem;
+  line-height: 1;
+  text-transform: uppercase;
+  padding: 0.75em 1.1em;
+  border: var(--px) solid var(--fg);
+  border-radius: 0;
+  background: var(--bg);
+  color: var(--fg);
+  box-shadow: var(--px) var(--px) 0 var(--ink);
+  cursor: pointer;
+  image-rendering: pixelated;
+}
+
+#rating button:hover,
+#controls button:hover,
+#debug button:hover,
+#enter:hover,
+#encore:hover {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+#rating button:active,
+#controls button:active,
+#debug button:active,
+#enter:active,
+#encore:active {
+  transform: translate(var(--px), var(--px));
+  box-shadow: none;
+}
+
+button:focus-visible {
+  outline: var(--px) dashed var(--bulb);
+  outline-offset: var(--px);
+}
+
+/* HUD: dialog box + arcade rating row. */
+#hud {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  pointer-events: none;
+}
+
+#caption {
+  width: min(46rem, calc(100vw - 3rem));
+  box-sizing: border-box;
+  padding: 0.9rem 1.2rem;
+  font-size: 2rem;
+  line-height: 1.15;
+  text-align: center;
+  background: var(--bg);
+  border: var(--px) solid var(--fg);
+  outline: var(--px) solid var(--bg);
+  outline-offset: var(--px);
+  box-shadow: calc(var(--px) * 2) calc(var(--px) * 2) 0 var(--ink);
+}
+
+#rating {
+  display: flex;
+  gap: 0.75rem;
+  pointer-events: auto;
+}
+
+/* Score tint, boo to uproar. */
+#rating button[data-score='1'] { border-color: #e63946; color: #e63946; }
+#rating button[data-score='2'] { border-color: #f4a261; color: #f4a261; }
+#rating button[data-score='3'] { border-color: #e9c46a; color: #e9c46a; }
+#rating button[data-score='4'] { border-color: #2a9d8f; color: #2a9d8f; }
+#rating button[data-score='5'] { border-color: var(--bulb); color: var(--bulb); }
+
+#rating button[data-score='1']:hover { background: #e63946; color: var(--bg); }
+#rating button[data-score='2']:hover { background: #f4a261; color: var(--bg); }
+#rating button[data-score='3']:hover { background: #e9c46a; color: var(--bg); }
+#rating button[data-score='4']:hover { background: #2a9d8f; color: var(--bg); }
+#rating button[data-score='5']:hover { background: var(--bulb); color: var(--bg); }
+
+#encore {
+  pointer-events: auto;
+  font-size: 1rem;
+  padding: 1em 1.6em;
+  border-color: var(--bulb);
+  color: var(--bulb);
+  animation: blink 1.2s steps(1) infinite;
+}
+
+/* Mute controls, top right. */
+#controls {
+  position: fixed;
+  top: 0.75rem;
+  right: 0.75rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+#controls button {
+  font-size: 0.55rem;
+}
+
+#controls button::before {
+  content: '♪ ';
+}
+
+#controls button[aria-pressed='true'] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+#controls button[aria-pressed='true']::before {
+  content: '× ';
+}
+
+/* Lobby overlay: canvas shows the marquee; this is only the bar / Enter. */
+#loading {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding-bottom: 14vh;
+  pointer-events: none;
+}
+
+#load-bar {
+  width: min(28rem, 80vw);
+  height: 1.5rem;
+  box-sizing: border-box;
+  padding: var(--px);
+  border: var(--px) solid var(--fg);
+  background: var(--bg);
+  box-shadow: var(--px) var(--px) 0 var(--ink);
+}
+
+#load-bar .fill {
+  width: 0;
+  height: 100%;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--bulb) 0 0.75rem,
+    transparent 0.75rem 1rem
+  );
+  transition: width 0.25s steps(4);
+}
+
+#load-note {
+  font-family: var(--display);
+  font-size: 0.6rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-shadow: 2px 2px 0 var(--ink);
+}
+
+#enter {
+  pointer-events: auto;
+  font-size: 1rem;
+  padding: 1em 1.6em;
+  border-color: var(--bulb);
+  color: var(--bulb);
+  animation: blink 1.2s steps(1) infinite;
+}
+
+#enter:hover,
+#encore:hover {
+  background: var(--bulb);
+  color: var(--bg);
+  animation: none;
+}
+
+/* Dev panel, top left. */
+#debug {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  font-size: 1rem;
+}
+
+#debug button {
+  font-size: 0.5rem;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #enter,
+  #encore {
+    animation: none;
+  }
+  #load-bar .fill {
+    transition: none;
+  }
+}
+
+@media (max-width: 600px) {
+  #caption {
+    font-size: 1.4rem;
+  }
+  #rating {
+    gap: 0.4rem;
+  }
+  #rating button {
+    font-size: 0.55rem;
+    padding: 0.7em 0.7em;
+  }
+}
+
+[hidden] {
+  display: none !important;
+}

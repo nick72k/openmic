@@ -1,0 +1,124 @@
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { Show } from './show';
+import { Reaction } from './types';
+
+const WAIT_MS = 1000;
+
+function showMidSet(): Show {
+  const show = new Show();
+  show.begin('hi');
+  show.tellJoke('a joke');
+  show.readyForScore();
+  return show;
+}
+
+afterEach(() => vi.useRealTimers());
+
+describe('Show verdict wait', () => {
+  it('tellJoke returns without waiting for the audience', () => {
+    const show = new Show();
+    show.begin('hi');
+
+    expect(show.tellJoke('a joke')).toBeUndefined();
+  });
+
+  it('awaitVerdict gives up after the bound', async () => {
+    vi.useFakeTimers();
+    const show = showMidSet();
+
+    const pending = show.awaitVerdict(WAIT_MS);
+    await vi.advanceTimersByTimeAsync(WAIT_MS);
+
+    expect(await pending).toBeNull();
+  });
+
+  it('awaitVerdict resolves when scored in time', async () => {
+    const show = showMidSet();
+
+    const pending = show.awaitVerdict(WAIT_MS);
+    show.score(5);
+
+    expect(await pending).toMatchObject({ score: 5, reaction: Reaction.Uproar });
+  });
+
+  it('awaitVerdict returns an already-given verdict', async () => {
+    const show = showMidSet();
+    show.score(1);
+
+    expect(await show.awaitVerdict(WAIT_MS)).toMatchObject({ score: 1 });
+  });
+
+  it('awaitVerdict stops on abort', async () => {
+    const show = showMidSet();
+    const controller = new AbortController();
+
+    const pending = show.awaitVerdict(WAIT_MS, controller.signal);
+    controller.abort();
+
+    expect(await pending).toBeNull();
+  });
+});
+
+describe('Show encore', () => {
+  async function endedShow(): Promise<Show> {
+    const show = new Show();
+    await show.begin('hi');
+    await show.end('bye');
+    return show;
+  }
+
+  it('fires ended after end', async () => {
+    const show = new Show();
+    let ended = false;
+    show.on('ended', () => {
+      ended = true;
+    });
+    await show.begin('hi');
+    await show.end('bye');
+
+    expect(ended).toBe(true);
+  });
+
+  it('awaitEncore gives up after the bound', async () => {
+    vi.useFakeTimers();
+    const show = await endedShow();
+
+    const pending = show.awaitEncore(WAIT_MS);
+    await vi.advanceTimersByTimeAsync(WAIT_MS);
+
+    expect(await pending).toBe(false);
+  });
+
+  it('awaitEncore resolves when the crowd asks', async () => {
+    const show = await endedShow();
+
+    const pending = show.awaitEncore(WAIT_MS);
+    show.requestEncore();
+
+    expect(await pending).toBe(true);
+  });
+
+  it('a new set clears the encore request', async () => {
+    vi.useFakeTimers();
+    const show = await endedShow();
+    show.requestEncore();
+    await show.begin('again');
+
+    const pending = show.awaitEncore(WAIT_MS);
+    await vi.advanceTimersByTimeAsync(WAIT_MS);
+
+    expect(await pending).toBe(false);
+  });
+
+  it('ignores encore requests mid-set', async () => {
+    vi.useFakeTimers();
+    const show = new Show();
+    await show.begin('hi');
+    show.requestEncore();
+
+    const pending = show.awaitEncore(WAIT_MS);
+    await vi.advanceTimersByTimeAsync(WAIT_MS);
+
+    expect(await pending).toBe(false);
+  });
+});

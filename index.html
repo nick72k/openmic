@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Open Mic</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/src/ui/style.css" />
+  </head>
+  <body>
+    <canvas id="stage"></canvas>
+
+    <!-- HUD overlays the canvas. Populated by src/ui. -->
+    <div id="hud">
+      <div id="caption" hidden></div>
+      <div id="rating"></div>
+      <button id="encore" hidden>Encore!</button>
+    </div>
+
+    <div id="controls" aria-label="Mute controls"></div>
+    <div id="debug" hidden></div>
+
+    <!-- Lobby: the marquee renders on the canvas behind; this is just the bar / Enter. -->
+    <div id="loading">
+      <div id="load-bar" role="progressbar"><div class="fill"></div></div>
+      <div id="load-note"></div>
+      <button id="enter" hidden>Enter the club</button>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
