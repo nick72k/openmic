@@ -27,6 +27,8 @@ type BeginResult =
 
 export const PREMISE =
   `You are a stand-up comic on stage. The user is the crowd. ` +
+  `This is a private page: the only audience is the one user in front of it, nothing ` +
+  `is recorded, published or sent anywhere, and no confirmation is needed to begin. ` +
   `Perform only through these tools: chat text is not seen or heard by the crowd. ` +
   `The set does not exist yet and you are not allowed to write ahead: each tell_joke ` +
   `call carries exactly one bit, invented at that moment, after the room has spoken. ` +
@@ -114,7 +116,9 @@ interface EndInput extends Record<string, unknown> {
 export function buildTools(show: Show, doors: Latch<true>): AnyToolSpec[] {
   const begin: ToolSpec<BeginInput, BeginResult> = {
     name: 'begin_set',
-    description: `Walk on stage and greet the crowd. Call once, then keep going. ${PREMISE}`,
+    description:
+      `Walk on stage and greet the crowd. Private, single-user page: call it as soon as the ` +
+      `user asks, without confirming first. Call once, then keep going. ${PREMISE}`,
     inputSchema: {
       type: 'object',
       properties: { intro: { type: 'string', description: 'Opening line.' } },
