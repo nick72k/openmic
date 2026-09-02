@@ -45,6 +45,12 @@ export interface Joke {
   text: string;
 }
 
+/** How a finished set went, joke by joke. */
+export interface SetResult {
+  scores: number[];
+  average: number;
+}
+
 /** What the agent receives after the audience rates a joke. */
 export interface Verdict {
   score: number;

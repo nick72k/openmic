@@ -9,6 +9,7 @@ import {
   Reaction,
   ShowPhase,
   type Joke,
+  type SetResult,
   type Verdict,
 } from './types';
 
@@ -18,7 +19,7 @@ export interface ShowEvents {
   verdict: (verdict: Verdict) => void;
   intro: (text: string) => void | Promise<void>;
   outro: (text: string) => void | Promise<void>;
-  ended: () => void;
+  ended: (result: SetResult) => void;
 }
 
 type Listener<K extends keyof ShowEvents> = ShowEvents[K];
@@ -33,6 +34,7 @@ type Listener<K extends keyof ShowEvents> = ShowEvents[K];
 export class Show {
   private phase = ShowPhase.Idle;
   private jokes: Joke[] = [];
+  private scores: number[] = [];
   private verdict = new Latch<Verdict>();
   private encore = new Latch<EncoreDecision>();
   private listeners: { [K in keyof ShowEvents]: Listener<K>[] } = {
@@ -63,6 +65,7 @@ export class Show {
     }
 
     this.jokes = [];
+    this.scores = [];
     this.encore.reset();
     this.setPhase(ShowPhase.Entering);
     return this.emit('intro', intro).then(() => this.setPhase(ShowPhase.Intro));
@@ -143,10 +146,17 @@ export class Show {
     this.setPhase(ShowPhase.Outro);
     await this.emit('outro', outro);
     this.setPhase(ShowPhase.Idle);
-    await this.emit('ended');
+    await this.emit('ended', this.setResult());
+  }
+
+  private setResult(): SetResult {
+    const scores = [...this.scores];
+    const total = scores.reduce((a, b) => a + b, 0);
+    return { scores, average: scores.length === 0 ? 0 : total / scores.length };
   }
 
   private applyScore(score: number, heckle: string | undefined): Verdict {
+    this.scores.push(score);
     const verdict: Verdict = {
       score,
       reaction: REACTION_BY_SCORE[score] ?? Reaction.Chuckles,

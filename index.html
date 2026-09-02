@@ -59,6 +59,16 @@
     </div>
 
     <div id="controls" aria-label="Mute controls"></div>
+
+    <!-- Night's scores, shown when the user presses Done. -->
+    <div id="scoreboard" hidden>
+      <div class="panel" role="dialog" aria-label="Set scores">
+        <h2>Tonight's set</h2>
+        <div class="big-score"></div>
+        <ul class="sets"></ul>
+        <button id="scoreboard-close">Close</button>
+      </div>
+    </div>
     <div id="debug" hidden></div>
 
     <!-- Lobby: the marquee renders on the canvas behind; this is just the bar / Enter. -->

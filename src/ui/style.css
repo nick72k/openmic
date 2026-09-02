@@ -225,6 +225,76 @@ button:focus-visible {
   content: '× ';
 }
 
+/* Scoreboard modal. */
+#scoreboard {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(6, 4, 12, 0.7);
+}
+
+#scoreboard .panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.1rem;
+  min-width: min(22rem, 80vw);
+  padding: 1.6rem 2.2rem;
+  background: var(--bg);
+  border: var(--px) solid var(--fg);
+  outline: var(--px) solid var(--bg);
+  outline-offset: var(--px);
+  box-shadow: calc(var(--px) * 2) calc(var(--px) * 2) 0 var(--ink);
+}
+
+#scoreboard h2 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+#scoreboard .big-score {
+  font-family: var(--display);
+  font-size: 2rem;
+  color: var(--bulb);
+  text-shadow: 3px 3px 0 var(--ink);
+}
+
+#scoreboard .sets {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 1.4rem;
+  text-align: center;
+}
+
+#scoreboard .sets li {
+  opacity: 0.85;
+}
+
+#scoreboard-close {
+  font-family: var(--display);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  padding: 0.75em 1.1em;
+  border: var(--px) solid var(--fg);
+  border-radius: 0;
+  background: var(--bg);
+  color: var(--fg);
+  box-shadow: var(--px) var(--px) 0 var(--ink);
+  cursor: pointer;
+}
+
+#scoreboard-close:hover {
+  background: var(--fg);
+  color: var(--bg);
+}
+
 /* Lobby overlay: canvas shows the marquee; this is only the bar / Enter. */
 #loading {
   position: fixed;

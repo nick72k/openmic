@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Show } from './show';
-import { EncoreDecision, MAX_HECKLE_LENGTH, Reaction } from './types';
+import { EncoreDecision, MAX_HECKLE_LENGTH, Reaction, type SetResult } from './types';
 
 const WAIT_MS = 1000;
 
@@ -71,6 +71,47 @@ describe('Show entering', () => {
     finishIntro();
     await entering;
     expect(() => show.tellJoke('on time')).not.toThrow();
+  });
+});
+
+describe('Show set scores', () => {
+  async function playJoke(show: Show, score: number): Promise<void> {
+    show.tellJoke('a bit');
+    show.readyForScore();
+    const pending = show.awaitVerdict(WAIT_MS);
+    show.score(score);
+    await pending;
+  }
+
+  it('reports the scores and their average when the set ends', async () => {
+    const show = new Show();
+    let result: SetResult | null = null;
+    show.on('ended', (r) => {
+      result = r;
+    });
+    await show.begin('hi');
+    await playJoke(show, 2);
+    await playJoke(show, 5);
+    await show.end('bye');
+
+    expect(result).toEqual({ scores: [2, 5], average: 3.5 });
+  });
+
+  it('starts each set from a clean sheet', async () => {
+    const show = new Show();
+    const results: SetResult[] = [];
+    show.on('ended', (r) => {
+      results.push(r);
+    });
+    await show.begin('hi');
+    await playJoke(show, 1);
+    await show.end('bye');
+    show.requestEncore();
+    await show.begin('again');
+    await playJoke(show, 4);
+    await show.end('bye again');
+
+    expect(results.map((r) => r.average)).toEqual([1, 4]);
   });
 });
 

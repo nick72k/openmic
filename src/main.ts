@@ -8,12 +8,13 @@ import { buildTools } from './mcp/tools';
 import { isWebMcpAvailable, registerTools } from './mcp/webmcp';
 import { Latch } from './show/latch';
 import { Show } from './show/show';
-import { Reaction } from './show/types';
+import { Reaction, type SetResult } from './show/types';
 import { Stage } from './stage/stage';
 import { Channel, MuteControls } from './ui/controls';
 import { mountDebugPanel } from './ui/debug';
 import { Hud } from './ui/hud';
 import { LoadStep, LoadingScreen } from './ui/loading';
+import { Scoreboard } from './ui/scoreboard';
 
 /**
  * Wiring.
@@ -41,8 +42,11 @@ async function main(): Promise<void> {
     () => {
       hud.hideEncore();
       show.endNight();
+      scoreboard.open(history);
     },
   );
+  const scoreboard = new Scoreboard(byId('scoreboard'));
+  const history = loadScores();
   const piper = new PiperSpeaker(...voiceOptions());
   const speaker = new FallbackSpeaker(piper, new WebSpeechSpeaker());
   const crowd = new Crowd();
@@ -54,7 +58,7 @@ async function main(): Promise<void> {
     [Channel.Crowd]: crowd,
   });
 
-  wireShow(show, stage, hud, speaker, crowd, ambience);
+  wireShow(show, stage, hud, speaker, crowd, ambience, history, scoreboard);
 
   // Marquee first: it is what the audience looks at while everything else loads.
   await stage.openLobby().catch((err) => console.warn('lobby unavailable', err));
@@ -89,6 +93,24 @@ async function main(): Promise<void> {
 }
 
 const ENTERED_KEY = 'openmic.entered';
+const SCORES_KEY = 'openmic.scores';
+
+function loadScores(): SetResult[] {
+  try {
+    const raw = sessionStorage.getItem(SCORES_KEY);
+    return raw ? (JSON.parse(raw) as SetResult[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveScores(history: SetResult[]): void {
+  try {
+    sessionStorage.setItem(SCORES_KEY, JSON.stringify(history));
+  } catch {
+    // storage unavailable; scores last for this page only
+  }
+}
 
 function enteredThisSession(): boolean {
   try {
@@ -113,9 +135,12 @@ function wireShow(
   speaker: Speaker,
   crowd: Crowd,
   ambience: Ambience,
+  history: SetResult[],
+  scoreboard: Scoreboard,
 ): void {
   show.on('intro', async (text) => {
     hud.hideEncore();
+    scoreboard.close();
     ambience.duck();
     await stage.walkOn();
     if (text === '') {
@@ -150,7 +175,11 @@ function wireShow(
     await stage.walkOff();
   });
 
-  show.on('ended', () => hud.showEncore());
+  show.on('ended', (result) => {
+    history.push(result);
+    saveScores(history);
+    hud.showEncore();
+  });
 }
 
 /** The show must go on: speech that fails or overruns its budget is cut, never awaited forever. */

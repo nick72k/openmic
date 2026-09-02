@@ -4,6 +4,8 @@ const AMBIENT_URL = '/sfx/ambient-bar-chatter.mp3';
 const FULL_GAIN = 0.6;
 const DUCKED_GAIN = 0.04; // barely audible under the act
 const RAMP_SECONDS = 3;
+const FADE_IN_SECONDS = 2.5; // Enter click to full chatter
+const SILENT_GAIN = 0.001; // exponential ramps cannot start at zero
 
 /**
  * Looping bar chatter behind the show.
@@ -64,12 +66,19 @@ export class Ambience implements Mutable {
     if (!this.ctx) {
       this.ctx = new AudioContext();
       this.gain = this.ctx.createGain();
-      this.gain.gain.value = this.target;
+      this.gain.gain.value = SILENT_GAIN;
       this.ctx.createMediaElementSource(this.audio).connect(this.gain).connect(this.ctx.destination);
     }
 
     await this.audio.play();
     await this.ctx.resume();
+
+    // Ease the room in rather than slamming the chatter on.
+    const gain = this.gain!.gain;
+    const now = this.ctx.currentTime;
+    gain.cancelScheduledValues(now);
+    gain.setValueAtTime(SILENT_GAIN, now);
+    gain.exponentialRampToValueAtTime(this.target, now + FADE_IN_SECONDS);
   }
 
   private rampTo(value: number): void {
