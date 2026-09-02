@@ -1,5 +1,16 @@
 # OpenMic
 
+[![Live](https://img.shields.io/badge/live-openmic.72keys.xyz-FFD166?logo=googlechrome&logoColor=white)](https://openmic.72keys.xyz/)
+[![WebMCP](https://img.shields.io/badge/WebMCP-document.modelContext-FF9955)](https://webmachinelearning.github.io/webmcp/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-6-646CFF?logo=vite&logoColor=white)](https://vite.dev/)
+[![Three.js](https://img.shields.io/badge/Three.js-r170-000000?logo=threedotjs&logoColor=white)](https://threejs.org/)
+[![Piper](https://img.shields.io/badge/TTS-Piper-4B8BBE)](https://github.com/rhasspy/piper)
+[![Vitest](https://img.shields.io/badge/tests-vitest-6E9F18?logo=vitest&logoColor=white)](https://vitest.dev/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-2EA043)](LICENSE)
+
+<p align="center"><img src="docs/marquee.png" width="596" alt="OpenMic marquee: OPENMIC, TONIGHT ONLY"></p>
+
 Your AI agent walks on stage and does five minutes. You heckle.
 
 Built for the WebMCP hackathon: the site exposes tools via
@@ -50,66 +61,44 @@ Each layer talks only to the one below it.
   mapping in `src/audio/crowd.ts`. `ambient-bar-chatter` loops from Enter
   and ducks on walk-on.
 
-## Loading and controls
+<p align="center"><img src="docs/hero.png" width="800" alt="The robot comic at the mic with a joke in the dialog box and the reaction row beneath"></p>
 
-While assets load the canvas shows the lobby (`src/stage/lobby.ts`): the
-marquee floating in a starfield with chasing bulbs. `src/ui/loading.ts` draws one weighted
-bar under it (stage 25 %, sound 15 %, voice 60 %) and swaps it for the Enter
-button when everything is in. A reload in the same tab skips Enter: the
-earlier click already satisfied the browser's autoplay rule. That click is
-also the user gesture browsers require before audio may play. Tools are
-registered at page load regardless (some hosts enumerate them only once);
-`begin_set` before Enter returns `pending` telling the agent to ask the user
-to click.
-
-`src/ui/controls.ts` (top right) mutes Agent / Ambient / Crowd / All. Every
-audio source implements `Mutable` (`src/audio/mutable.ts`); the muted set
-persists in `localStorage`.
-
-## Look
-
-Retro cabinet: Press Start 2P for anything you press, VT323 for anything you
-read, 4 px hard shadows, no radii. Caption is an RPG dialog box; rating
-buttons tint from boo-red to uproar-gold. Tokens at the top of
-`src/ui/style.css`. Blinking respects `prefers-reduced-motion`.
 
 ## Voice
 
-Piper TTS in the browser via `@mintplex-labs/piper-tts-web`, run inside a
-module worker (`src/audio/piper.worker.ts`) so inference never blocks the
-render loop. Voice `en_US-kathleen-low` (~63 MB; every en_US tier is that
-size) is cached in OPFS after the first visit. A ring modulator
-(`src/audio/robotfx.ts`) gives it the robot edge and `PITCH_RATE` raises
-the pitch (resampling, so tempo rises too); tune `RING_HZ`, `DRY`, `WET`,
-`PITCH_RATE` there. If the voice fails to load, `FallbackSpeaker` uses the
-browser's Web Speech API.
+Piper TTS, in the browser. `@mintplex-labs/piper-tts-web` runs the
+`en_US-kathleen-low` model on ONNX runtime inside a module worker
+(`src/audio/piper.worker.ts`), so inference never touches the render loop.
+Sentences are synthesised one ahead of playback. A Web Audio ring modulator
+plus a pitch shift (`src/audio/robotfx.ts`) give it the robot edge; `RING_HZ`,
+`DRY`, `WET` and `PITCH_RATE` are the knobs. If the voice can't load,
+`FallbackSpeaker` drops to the browser's Web Speech API.
 
-Everything the voice needs is served from this site's own origin under
-`public/vendor/` (gitignored, ~93 MB): the voice model, the ONNX runtime
-WASM and the phonemizer. The worker points the library's WASM paths at
-`/vendor/` and rewrites its HuggingFace voice URLs to `/vendor/voices/`.
-`onnxruntime-web` is pinned to 1.18.0 to match the shipped WASM. To
-populate `public/vendor/` on a fresh clone:
+Nothing is fetched from a third party at runtime. The model, the ONNX
+runtime WASM and the phonemizer are served from this origin under
+`public/vendor/` (gitignored, ~93 MB) and cached in the browser's private
+filesystem after the first visit. The worker points the library's WASM
+paths at `/vendor/` and rewrites its HuggingFace voice URLs to
+`/vendor/voices/`; `onnxruntime-web` is pinned to 1.18.0 to match the
+shipped WASM. On a fresh clone, populate `public/vendor/` with:
 
-- `public/vendor/ort/`: `ort-wasm-simd.wasm` and `ort-wasm.wasm` from
-  `node_modules/onnxruntime-web/dist/`
-- `public/vendor/piper/`: `piper_phonemize.wasm` and `piper_phonemize.data`
-  from `https://cdn.jsdelivr.net/npm/@diffusionstudio/piper-wasm@1.0.0/build/`
-- `public/vendor/voices/<upstream path>/`: the voice's `.onnx` and
-  `.onnx.json` from `https://huggingface.co/diffusionstudio/piper-voices`,
-  keeping the upstream path (`en/en_US/kathleen/low/en_US-kathleen-low.onnx`)
+| Path | Files | From |
+|---|---|---|
+| `vendor/ort/` | `ort-wasm-simd.wasm`, `ort-wasm.wasm` | `node_modules/onnxruntime-web/dist/` |
+| `vendor/piper/` | `piper_phonemize.wasm`, `piper_phonemize.data` | `cdn.jsdelivr.net/npm/@diffusionstudio/piper-wasm@1.0.0/build/` |
+| `vendor/voices/en/en_US/kathleen/low/` | `en_US-kathleen-low.onnx`, `.onnx.json` | `huggingface.co/diffusionstudio/piper-voices` (same path) |
 
-`?voice=<id>` still switches voices (and `?fx=off` drops the robot effect),
-but only for voices whose files you have added under `public/vendor/voices/`.
-Set the default in `src/audio/piper.ts` (`DEFAULT_VOICE_ID`).
+`?voice=<id>` switches voices and `?fx=off` drops the robot effect, for any
+voice whose files sit under `vendor/voices/` at its upstream path. The
+default lives in `src/audio/piper.ts` (`DEFAULT_VOICE_ID`).
 
 ## Performance
 
-- One dynamic light (the spot). Curtain shading is baked into vertex colours
-  (`src/stage/curtain.ts`), so the biggest surface costs no lighting.
-- `src/stage/quality.ts`: a cores/memory heuristic picks a tier (MSAA off, 1×
-  pixel ratio on low end), then `AdaptiveResolution` steps the pixel ratio
-  between 0.6× and the tier cap to hold ~50 fps.
+One dynamic light. The curtain, the largest surface on screen, has its
+shading baked into vertex colours (`src/stage/curtain.ts`) and costs nothing
+to light. `src/stage/quality.ts` picks a tier from cores and memory (MSAA
+off and 1x pixel ratio on low-end hardware), then `AdaptiveResolution`
+steps the pixel ratio between 0.6x and the tier's cap to hold about 50 fps.
 
 ## Dev
 
@@ -119,7 +108,9 @@ npm run dev
 npm test
 ```
 
-Without a WebMCP browser, a debug panel fakes the agent via `prompt()`.
+In a browser without WebMCP, a panel at the top left fakes the agent via
+`prompt()`. `?meter` shows what the page feeds the agent per set: calls,
+result bytes and a rough token count.
 
 ## Licence
 
