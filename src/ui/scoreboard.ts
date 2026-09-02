@@ -8,6 +8,7 @@ export class Scoreboard {
   private root: HTMLElement;
   private score: HTMLElement;
   private sets: HTMLElement;
+  private onClose: (() => void) | null = null;
 
   constructor(root: HTMLElement) {
     this.root = root;
@@ -23,8 +24,8 @@ export class Scoreboard {
     });
   }
 
-  /** Latest set big, the whole night listed underneath. */
-  open(history: readonly SetResult[]): void {
+  /** Latest set big, the whole night listed underneath. Resolves when closed. */
+  open(history: readonly SetResult[]): Promise<void> {
     const latest = history[history.length - 1];
     this.score.textContent = latest ? fmt(latest.average) : '-';
 
@@ -38,10 +39,20 @@ export class Scoreboard {
 
     this.root.hidden = false;
     this.root.querySelector<HTMLButtonElement>('#scoreboard-close')?.focus();
+
+    return new Promise((resolve) => {
+      this.onClose = resolve;
+    });
   }
 
   close(): void {
+    if (this.root.hidden) {
+      return;
+    }
     this.root.hidden = true;
+    const done = this.onClose;
+    this.onClose = null;
+    done?.();
   }
 }
 

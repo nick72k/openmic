@@ -71,6 +71,12 @@ export class LoadingScreen {
     this.root.hidden = true;
   }
 
+  /** Back from the club: no loading to do, straight to the Enter button. */
+  reopen(): Promise<void> {
+    this.root.hidden = false;
+    return this.waitForEnter();
+  }
+
   private render(): void {
     let total = 0;
     let current: LoadStep | null = null;

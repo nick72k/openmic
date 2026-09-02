@@ -5,6 +5,7 @@ const FULL_GAIN = 0.6;
 const DUCKED_GAIN = 0.04; // barely audible under the act
 const RAMP_SECONDS = 3;
 const FADE_IN_SECONDS = 2.5; // Enter click to full chatter
+const FADE_OUT_SECONDS = 0.8; // leaving the club
 const SILENT_GAIN = 0.001; // exponential ramps cannot start at zero
 
 /**
@@ -44,6 +45,21 @@ export class Ambience implements Mutable {
       window.addEventListener('pointerdown', retry, { once: true });
       window.addEventListener('keydown', retry, { once: true });
     }
+  }
+
+  /** Ramp down and pause; start() brings it back with the usual fade-in. */
+  async stop(): Promise<void> {
+    if (!this.ctx || !this.gain) {
+      return;
+    }
+    const gain = this.gain.gain;
+    const now = this.ctx.currentTime;
+    gain.cancelScheduledValues(now);
+    gain.setValueAtTime(Math.max(SILENT_GAIN, gain.value), now);
+    gain.exponentialRampToValueAtTime(SILENT_GAIN, now + FADE_OUT_SECONDS);
+    await new Promise((resolve) => setTimeout(resolve, FADE_OUT_SECONDS * 1000));
+    this.audio.pause();
+    this.target = FULL_GAIN;
   }
 
   duck(): void {

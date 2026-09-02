@@ -87,9 +87,20 @@ export class Stage {
   }
 
   start(): void {
-    this.lobby = null;
     this.clock.start();
     this.renderer.setAnimationLoop(() => this.frame());
+  }
+
+  /** Back to the marquee: comic to the wings, camera pulled out, lobby loop. */
+  returnToLobby(): void {
+    this.comic.root.position.x = WINGS_X;
+    this.comic.root.rotation.y = FACE_AUDIENCE;
+    this.comic.play(ComicClip.Idle, PlayMode.Loop);
+    this.camera.position.copy(CAMERA_FAR);
+    this.camera.lookAt(CAMERA_TARGET);
+    if (this.lobby) {
+      this.renderer.setAnimationLoop(() => this.lobbyFrame());
+    }
   }
 
   /** Walk from the wings to centre while the camera pushes in. Resolves on arrival. */

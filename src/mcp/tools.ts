@@ -3,8 +3,12 @@ import type { Show } from '../show/show';
 import { EncoreDecision, Reaction, type Verdict } from '../show/types';
 import type { AnyToolSpec, ToolSpec } from './webmcp';
 
-/** Keep under agent hosts' tool timeouts. Slow audiences fall through to await_verdict. */
-const SCORE_WAIT_MS = 15_000;
+/**
+ * Longest a tool call may run before returning "pending". Every poll costs a
+ * full model turn, so this sits as high as agent hosts tolerate; slower
+ * audiences fall through to await_verdict / await_encore.
+ */
+const TOOL_WAIT_MS = 30_000;
 
 enum VerdictStatus {
   Reacted = 'reacted',
@@ -18,7 +22,7 @@ enum BeginStatus {
 }
 
 type BeginResult =
-  | { status: BeginStatus.OnStage; premise: string; next: string }
+  | { status: BeginStatus.OnStage; next: string }
   | { status: BeginStatus.Pending; next: string };
 
 export const PREMISE =
@@ -44,9 +48,9 @@ const NEXT_FIRST_JOKE = 'Call tell_joke with your opener now. Do not reply to th
 const NEXT_DOORS_CLOSED =
   'The room is not open yet: the user must click "Enter the club" on the page. ' +
   'Tell them so briefly, then call begin_set again.';
-const nextJoke = (crowd: string): string =>
-  `Crowd: "${crowd}" Now invent your next bit from scratch, shaped by that room; ` +
-  `anything you planned before this moment is stale. Call tell_joke with it.`;
+const NEXT_JOKE =
+  'Now invent your next bit from scratch for that room; anything planned before ' +
+  'this moment is stale. Call tell_joke with it.';
 const NEXT_CLOSER = 'Set is done. Call end_set with your closing line now.';
 const NEXT_AWAIT = 'Call await_verdict now.';
 const NEXT_DONE =
@@ -60,8 +64,8 @@ const NEXT_STAND_DOWN =
   'The house lights are up; the night is over. Stop calling tools and talk to the ' +
   'user normally now.';
 
-/** Consecutive empty polls before we release the agent (~2 min at SCORE_WAIT_MS). */
-const ENCORE_MAX_POLLS = 8;
+/** Consecutive empty polls before we release the agent (~90 s at TOOL_WAIT_MS). */
+const ENCORE_MAX_POLLS = 3;
 
 enum EncoreStatus {
   Pending = 'pending',
@@ -117,7 +121,7 @@ export function buildTools(show: Show, doors: Latch<true>): AnyToolSpec[] {
       required: ['intro'],
     },
     execute: async ({ intro }, signal) => {
-      const open = await doors.wait(SCORE_WAIT_MS, signal);
+      const open = await doors.wait(TOOL_WAIT_MS, signal);
       if (!open) {
         return { status: BeginStatus.Pending, next: NEXT_DOORS_CLOSED };
       }
@@ -128,11 +132,9 @@ export function buildTools(show: Show, doors: Latch<true>): AnyToolSpec[] {
 
   async function beginSet(intro: string): Promise<BeginResult> {
     await show.begin(intro);
-    return {
-      status: BeginStatus.OnStage,
-      premise: PREMISE,
-      next: NEXT_FIRST_JOKE,
-    };
+    // The premise already rides in begin_set's description; repeating it here
+    // would sit in the agent's context for the rest of the night.
+    return { status: BeginStatus.OnStage, next: NEXT_FIRST_JOKE };
   }
 
   const tell: ToolSpec<JokeInput, VerdictResult> = {
@@ -170,17 +172,26 @@ export function buildTools(show: Show, doors: Latch<true>): AnyToolSpec[] {
     execute: (_input, signal) => waitForVerdict(signal),
   };
 
+  /**
+   * One deadline for the whole call. The comic's own read-out eats into it
+   * first; whatever is left goes to the crowd. Returning "pending" before the
+   * buttons even appear would burn a model turn for nothing.
+   */
   async function waitForVerdict(signal: AbortSignal): Promise<VerdictResult> {
-    const verdict = await show.awaitVerdict(SCORE_WAIT_MS, signal);
+    const deadline = performance.now() + TOOL_WAIT_MS;
+    const remaining = (): number => Math.max(0, deadline - performance.now());
+
+    const ready = await show.awaitReady(remaining(), signal);
+    const verdict = ready ? await show.awaitVerdict(remaining(), signal) : null;
     if (!verdict) {
-      return { status: VerdictStatus.Pending, retryAfterMs: SCORE_WAIT_MS, next: NEXT_AWAIT };
+      return { status: VerdictStatus.Pending, retryAfterMs: TOOL_WAIT_MS, next: NEXT_AWAIT };
     }
 
     const crowd = describeCrowd(verdict);
     return {
       status: VerdictStatus.Reacted,
       crowd,
-      next: verdict.jokesRemaining > 0 ? nextJoke(crowd) : NEXT_CLOSER,
+      next: verdict.jokesRemaining > 0 ? NEXT_JOKE : NEXT_CLOSER,
     };
   }
 
@@ -214,7 +225,7 @@ export function buildTools(show: Show, doors: Latch<true>): AnyToolSpec[] {
       required: ['intro'],
     },
     execute: async ({ intro }, signal) => {
-      const decision = await show.awaitEncore(SCORE_WAIT_MS, signal);
+      const decision = await show.awaitEncore(TOOL_WAIT_MS, signal);
       if (decision === EncoreDecision.More) {
         emptyEncorePolls = 0;
         return beginSet(intro?.trim() ?? ''); // no line: walk on in silence, never a stock one

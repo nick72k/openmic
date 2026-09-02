@@ -59,6 +59,43 @@ describe('Show verdict wait', () => {
   });
 });
 
+describe('Show ready gate', () => {
+  it('awaitReady resolves once the joke has been read out', async () => {
+    const show = new Show();
+    await show.begin('hi');
+    show.tellJoke('a bit');
+
+    const pending = show.awaitReady(WAIT_MS);
+    show.readyForScore();
+
+    expect(await pending).toBe(true);
+  });
+
+  it('awaitReady gives up while the comic is still talking', async () => {
+    vi.useFakeTimers();
+    const show = new Show();
+    await show.begin('hi');
+    show.tellJoke('a long bit');
+
+    const pending = show.awaitReady(WAIT_MS);
+    await vi.advanceTimersByTimeAsync(WAIT_MS);
+
+    expect(await pending).toBe(false);
+  });
+
+  it('awaitReady resets for each joke', async () => {
+    vi.useFakeTimers();
+    const show = await showMidSet();
+    show.score(3);
+    show.tellJoke('next bit');
+
+    const pending = show.awaitReady(WAIT_MS);
+    await vi.advanceTimersByTimeAsync(WAIT_MS);
+
+    expect(await pending).toBe(false);
+  });
+});
+
 describe('Show entering', () => {
   it('rejects a joke while the walk-on and greeting are still running', async () => {
     const show = new Show();

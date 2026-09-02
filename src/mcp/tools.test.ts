@@ -30,7 +30,6 @@ describe('tell_joke', () => {
 
     expect(result.status).toBe('reacted');
     expect(result.crowd).toMatch(/boos/i);
-    expect(result.next).toContain(result.crowd);
     expect(result.next).not.toMatch(/\d/); // no numbers reach the agent
   });
 
@@ -46,6 +45,19 @@ describe('tell_joke', () => {
     await pending;
 
     expect(spoken).toEqual(['the bit']);
+  });
+});
+
+describe('tell_joke waits for the read-out', () => {
+  it('keeps waiting while the comic is still speaking, then takes the score', async () => {
+    const { show, tool } = await onStage();
+
+    const pending = tool.tell_joke.execute({ text: 'a bit' }, signal);
+    await new Promise((r) => setTimeout(r, 50)); // still "speaking": no readyForScore yet
+    show.readyForScore();
+    show.score(4);
+
+    expect(await pending).toMatchObject({ status: 'reacted' });
   });
 });
 
@@ -119,6 +131,5 @@ describe('heckle', () => {
     const result = (await pending) as { crowd: string; next: string };
 
     expect(result.crowd).toContain('Someone in the crowd shouts: "Get a real job!"');
-    expect(result.next).toContain('Get a real job!');
   });
 });

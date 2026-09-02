@@ -225,6 +225,22 @@ button:focus-visible {
   content: '× ';
 }
 
+/* Blackout layer for scene changes. */
+#fade {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: var(--ink);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.7s ease;
+}
+
+#fade.on {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 /* Scoreboard modal. */
 #scoreboard {
   position: fixed;
@@ -352,6 +368,20 @@ button:focus-visible {
   background: var(--bulb);
   color: var(--bg);
   animation: none;
+}
+
+/* Context meter (?meter), bottom left. */
+#meter {
+  position: fixed;
+  left: 0.75rem;
+  bottom: 0.75rem;
+  font-family: var(--display);
+  font-size: 0.5rem;
+  line-height: 1.6;
+  color: var(--fg);
+  text-shadow: 2px 2px 0 var(--ink);
+  opacity: 0.8;
+  pointer-events: none;
 }
 
 /* Dev panel, top left. */

@@ -5,13 +5,15 @@ import { RobotFx } from './audio/robotfx';
 import { speechBudgetMs } from './audio/text';
 import { FallbackSpeaker, WebSpeechSpeaker, type Speaker } from './audio/tts';
 import { buildTools } from './mcp/tools';
-import { isWebMcpAvailable, registerTools } from './mcp/webmcp';
+import { ToolMeter } from './mcp/meter';
+import { isWebMcpAvailable, metered, registerTools } from './mcp/webmcp';
 import { Latch } from './show/latch';
 import { Show } from './show/show';
 import { Reaction, type SetResult } from './show/types';
 import { Stage } from './stage/stage';
 import { Channel, MuteControls } from './ui/controls';
 import { mountDebugPanel } from './ui/debug';
+import { Blackout, blackout } from './ui/fade';
 import { Hud } from './ui/hud';
 import { LoadStep, LoadingScreen } from './ui/loading';
 import { Scoreboard } from './ui/scoreboard';
@@ -42,11 +44,12 @@ async function main(): Promise<void> {
     () => {
       hud.hideEncore();
       show.endNight();
-      scoreboard.open(history);
+      scoreboard.open(history).then(() => leave?.());
     },
   );
   const scoreboard = new Scoreboard(byId('scoreboard'));
   const history = loadScores();
+  let leave: (() => void) | null = null; // resolved when the scoreboard closes after Done
   const piper = new PiperSpeaker(...voiceOptions());
   const speaker = new FallbackSpeaker(piper, new WebSpeechSpeaker());
   const crowd = new Crowd();
@@ -65,7 +68,7 @@ async function main(): Promise<void> {
 
   // Register before loading: some hosts list tools once, at page load.
   const doors = new Latch<true>();
-  const tools = buildTools(show, doors);
+  const tools = withMeter(buildTools(show, doors));
   if (isWebMcpAvailable()) {
     await registerTools(tools);
   } else {
@@ -85,11 +88,32 @@ async function main(): Promise<void> {
     await loading.waitForEnter();
     rememberEntered();
   }
-  loading.hide();
 
-  stage.start();
-  ambience.start();
-  doors.fire(true);
+  // Club loop: Enter -> show(s) -> Done -> scores -> Close -> lobby -> Enter ...
+  for (;;) {
+    loading.hide();
+    stage.start();
+    ambience.start();
+    doors.fire(true);
+
+    await new Promise<void>((resolve) => {
+      leave = resolve;
+    });
+    leave = null;
+
+    await blackout(Blackout.In);
+    await ambience.stop();
+    hud.setCaption('');
+    hud.hideRating();
+    hud.hideEncore();
+    stage.returnToLobby();
+    doors.reset();
+    forgetEntered();
+    const reentry = loading.reopen();
+    await blackout(Blackout.Out);
+    await reentry;
+    rememberEntered();
+  }
 }
 
 const ENTERED_KEY = 'openmic.entered';
@@ -117,6 +141,14 @@ function enteredThisSession(): boolean {
     return sessionStorage.getItem(ENTERED_KEY) === '1';
   } catch {
     return false;
+  }
+}
+
+function forgetEntered(): void {
+  try {
+    sessionStorage.removeItem(ENTERED_KEY);
+  } catch {
+    // storage unavailable
   }
 }
 
@@ -224,6 +256,22 @@ async function warmUpVoice(loading: LoadingScreen, piper: PiperSpeaker): Promise
     console.warn('Piper unavailable, staying on Web Speech', err);
     loading.fail(LoadStep.Voice, 'Using browser voice');
   }
+}
+
+/** ?meter shows what the page feeds the agent: calls, result bytes, a rough token figure. */
+function withMeter(tools: ReturnType<typeof buildTools>): ReturnType<typeof buildTools> {
+  if (!new URLSearchParams(location.search).has('meter')) {
+    return tools;
+  }
+  const meter = new ToolMeter();
+  const el = byId('meter');
+  el.hidden = false;
+  meter.onChange((t) => {
+    el.textContent =
+      `calls ${t.calls} · results ${(t.resultBytes / 1024).toFixed(1)}k · ` +
+      `schemas ${(t.schemaBytes / 1024).toFixed(1)}k · ~${t.approxTokens.toLocaleString()} tok`;
+  });
+  return metered(tools, meter);
 }
 
 /** ?voice=<piper id> and ?fx=off let you audition voices without a rebuild. */

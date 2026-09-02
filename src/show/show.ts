@@ -36,6 +36,7 @@ export class Show {
   private jokes: Joke[] = [];
   private scores: number[] = [];
   private verdict = new Latch<Verdict>();
+  private ready = new Latch<true>(); // fires once the joke has been read out
   private encore = new Latch<EncoreDecision>();
   private listeners: { [K in keyof ShowEvents]: Listener<K>[] } = {
     phase: [],
@@ -84,6 +85,7 @@ export class Show {
     const joke: Joke = { index: this.jokes.length, text };
     this.jokes.push(joke);
     this.verdict.reset();
+    this.ready.reset();
 
     this.setPhase(ShowPhase.Telling);
     this.emit('joke', joke);
@@ -124,7 +126,17 @@ export class Show {
   readyForScore(): void {
     if (this.phase === ShowPhase.Telling) {
       this.setPhase(ShowPhase.AwaitingScore);
+      this.ready.fire(true);
     }
+  }
+
+  /**
+   * True once the current joke has been read out and the crowd can react;
+   * false after timeoutMs or abort. Lets a tool spend its wait on the
+   * audience instead of on the comic's own delivery.
+   */
+  async awaitReady(timeoutMs: number, signal?: AbortSignal): Promise<boolean> {
+    return (await this.ready.wait(timeoutMs, signal)) === true;
   }
 
   /** Called by UI when the audience presses a button, optionally shouting something. */

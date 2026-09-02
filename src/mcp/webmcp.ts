@@ -4,6 +4,8 @@
  * https://github.com/webmachinelearning/webmcp. Only this file touches the raw API.
  */
 
+import type { ToolMeter } from './meter';
+
 export interface ToolSpec<TInput extends Record<string, unknown>, TOutput> {
   name: string;
   description: string;
@@ -25,6 +27,21 @@ export async function registerTools(tools: AnyToolSpec[]): Promise<void> {
   }
 
   await Promise.all(tools.map((t) => ctx.registerTool(toModelContextTool(t))));
+}
+
+/** Wrap each tool so every call's result size is counted. */
+export function metered(tools: AnyToolSpec[], meter: ToolMeter): AnyToolSpec[] {
+  return tools.map((t) => {
+    meter.recordSchema({ name: t.name, description: t.description, inputSchema: t.inputSchema });
+    return {
+      ...t,
+      execute: async (input, signal) => {
+        const result = await t.execute(input, signal);
+        meter.recordCall(result);
+        return result;
+      },
+    };
+  });
 }
 
 function toModelContextTool(spec: AnyToolSpec): WebMCP.ModelContextTool {
