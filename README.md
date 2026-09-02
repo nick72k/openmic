@@ -77,20 +77,30 @@ buttons tint from boo-red to uproar-gold. Tokens at the top of
 
 Piper TTS in the browser via `@mintplex-labs/piper-tts-web`, run inside a
 module worker (`src/audio/piper.worker.ts`) so inference never blocks the
-render loop. Voice `en_US-kathleen-low` (~63 MB; every en_US tier is that size)
-downloads from HuggingFace on first visit and is cached in OPFS. A ring
-modulator (`src/audio/robotfx.ts`) gives it the robot edge and `PITCH_RATE`
-raises the pitch (resampling, so tempo rises too); tune `RING_HZ`, `DRY`,
-`WET`, `PITCH_RATE` there.
+render loop. Voice `en_US-kathleen-low` (~63 MB; every en_US tier is that
+size) is cached in OPFS after the first visit. A ring modulator
+(`src/audio/robotfx.ts`) gives it the robot edge and `PITCH_RATE` raises
+the pitch (resampling, so tempo rises too); tune `RING_HZ`, `DRY`, `WET`,
+`PITCH_RATE` there. If the voice fails to load, `FallbackSpeaker` uses the
+browser's Web Speech API.
 
-Audition without rebuilding: `?voice=en_US-kathleen-low`, `?fx=off`.
-Candidates that lean synthetic: `en_US-danny-low`, `en_US-kathleen-low`,
-`en_GB-alan-low`. Full list: `en_US-{amy,arctic,bryce,danny,hfc_female,
-hfc_male,joe,john,kathleen,kristin,kusal,lessac,libritts_r,ljspeech,mike,
-norman,ryan,sam}` and `en_GB-{alan,alba,aru,cori,jenny_dioco,
-northern_english_male,semaine,southern_english_female,vctk}`. If it fails,
-`FallbackSpeaker` uses the browser's Web Speech API. ONNX runtime WASM
-loads from cdnjs; `onnxruntime-web` is pinned to 1.18.0 to match.
+Everything the voice needs is served from this site's own origin under
+`public/vendor/` (gitignored, ~93 MB): the voice model, the ONNX runtime
+WASM and the phonemizer. The worker points the library's WASM paths at
+`/vendor/` and rewrites its HuggingFace voice URLs to `/vendor/voices/`.
+`onnxruntime-web` is pinned to 1.18.0 to match the shipped WASM. To
+populate `public/vendor/` on a fresh clone:
+
+- `public/vendor/ort/`: `ort-wasm-simd.wasm` and `ort-wasm.wasm` from
+  `node_modules/onnxruntime-web/dist/`
+- `public/vendor/piper/`: `piper_phonemize.wasm` and `piper_phonemize.data`
+  from `https://cdn.jsdelivr.net/npm/@diffusionstudio/piper-wasm@1.0.0/build/`
+- `public/vendor/voices/<upstream path>/`: the voice's `.onnx` and
+  `.onnx.json` from `https://huggingface.co/diffusionstudio/piper-voices`,
+  keeping the upstream path (`en/en_US/kathleen/low/en_US-kathleen-low.onnx`)
+
+`?voice=<id>` still switches voices (and `?fx=off` drops the robot effect),
+but only for voices whose files you have added under `public/vendor/voices/`.
 Set the default in `src/audio/piper.ts` (`DEFAULT_VOICE_ID`).
 
 ## Performance
