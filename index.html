@@ -42,7 +42,7 @@
     <link rel="stylesheet" href="/src/ui/style.css" />
   </head>
   <body>
-    <canvas id="stage"></canvas>
+    <canvas id="stage" aria-hidden="true"></canvas>
 
     <!-- HUD overlays the canvas. Populated by src/ui. -->
     <div id="hud">
@@ -51,15 +51,21 @@
         <q>Take the stage.</q>
         <button id="cue-copy">Copy</button>
       </div>
-      <div id="caption" hidden></div>
-      <div id="rating"></div>
+      <div id="caption" aria-live="polite" hidden></div>
+      <div id="reaction" aria-live="polite" hidden></div>
+      <div id="reactions" hidden>
+        <div id="rating" role="group" aria-label="Rate the joke" tabindex="-1"></div>
+        <span class="divider" aria-hidden="true"></span>
+        <button id="heckle-toggle" aria-pressed="false" aria-controls="heckle">Heckle! <kbd>H</kbd></button>
+      </div>
       <div id="heckle" hidden>
-        <input type="text" placeholder="Shout something, then pick a reaction" autocomplete="off" />
-        <div class="hint" hidden></div>
+        <label for="heckle-input" class="sr-only">Your heckle</label>
+        <input id="heckle-input" type="text" placeholder="Shout something, Enter, then pick a reaction" autocomplete="off" />
+        <div class="hint" aria-live="polite" hidden></div>
       </div>
       <div id="curtain-call" hidden>
-        <button id="encore">Encore!</button>
-        <button id="done">Done</button>
+        <button id="encore">Encore! <kbd>E</kbd></button>
+        <button id="done">Done <kbd>D</kbd></button>
       </div>
     </div>
 
@@ -79,8 +85,8 @@
 
     <!-- Lobby: the marquee renders on the canvas behind; this is just the bar / Enter. -->
     <div id="loading">
-      <div id="load-bar" role="progressbar"><div class="fill"></div></div>
-      <div id="load-note"></div>
+      <div id="load-bar" role="progressbar" aria-label="Loading" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="fill"></div></div>
+      <div id="load-note" aria-live="polite"></div>
       <button id="enter" hidden>Enter the club</button>
     </div>
 

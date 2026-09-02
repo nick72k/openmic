@@ -29,8 +29,29 @@ body {
   display: block;
 }
 
+/* Visually hidden, still read by screen readers. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Key hint inside a button. */
+kbd {
+  margin-left: 0.4em;
+  padding: 0.1em 0.35em;
+  font: inherit;
+  font-size: 0.75em;
+  border: 2px solid currentColor;
+  opacity: 0.7;
+}
+
 /* Pixel button: shared by every control on the page. */
 #rating button,
+#heckle-toggle,
 #controls button,
 #debug button,
 #enter,
@@ -51,6 +72,7 @@ body {
 }
 
 #rating button:hover,
+#heckle-toggle:hover,
 #controls button:hover,
 #debug button:hover,
 #enter:hover,
@@ -61,6 +83,7 @@ body {
 }
 
 #rating button:active,
+#heckle-toggle:active,
 #controls button:active,
 #debug button:active,
 #enter:active,
@@ -137,10 +160,55 @@ button:focus-visible {
   color: var(--bg);
 }
 
+#reaction {
+  font-size: 1.5rem;
+  color: var(--bulb);
+  text-shadow: 2px 2px 0 var(--ink);
+}
+
+/* Reactions row: scores as a group, then a divider, then the heckle switch. */
+#reactions {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  pointer-events: auto;
+}
+
 #rating {
   display: flex;
   gap: 0.75rem;
-  pointer-events: auto;
+}
+
+#rating:focus-visible {
+  outline: var(--px) dashed var(--bulb);
+  outline-offset: calc(var(--px) * 2);
+}
+
+#reactions .divider {
+  width: var(--px);
+  height: 2.2rem;
+  background: var(--fg);
+  opacity: 0.5;
+}
+
+/* The heckle switch is a different kind of control: filled, wider, no score tint. */
+#heckle-toggle {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+  padding-left: 1.4em;
+  padding-right: 1.4em;
+}
+
+#heckle-toggle:hover {
+  background: var(--bg);
+  color: var(--accent);
+}
+
+#heckle-toggle[aria-pressed='true'] {
+  background: var(--bulb);
+  border-color: var(--bulb);
+  color: var(--bg);
 }
 
 #rating button {
@@ -159,16 +227,6 @@ button:focus-visible {
 #rating button[data-score='3']:hover { background: #e9c46a; color: var(--bg); }
 #rating button[data-score='4']:hover { background: #2a9d8f; color: var(--bg); }
 #rating button[data-score='5']:hover { background: var(--bulb); color: var(--bg); }
-
-#rating button[data-heckle] {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-#rating button[data-heckle]:hover {
-  background: var(--accent);
-  color: var(--bg);
-}
 
 #heckle {
   pointer-events: auto;
@@ -205,11 +263,6 @@ button:focus-visible {
   text-shadow: 2px 2px 0 var(--ink);
 }
 
-#rating button[data-heckle][aria-pressed='true'] {
-  background: var(--accent);
-  color: var(--bg);
-}
-
 #curtain-call {
   display: flex;
   gap: 0.75rem;
@@ -244,7 +297,7 @@ button:focus-visible {
 }
 
 #controls button::before {
-  content: '♪ ';
+  content: '♪ ' / '';
   font-size: 1.5em;
   line-height: 0;
   vertical-align: -0.1em;
@@ -256,7 +309,7 @@ button:focus-visible {
 }
 
 #controls button[aria-pressed='true']::before {
-  content: '× ';
+  content: '× ' / '';
 }
 
 /* Blackout layer for scene changes. */
@@ -444,7 +497,8 @@ button:focus-visible {
   #encore {
     animation: none;
   }
-  #load-bar .fill {
+  #load-bar .fill,
+  #fade {
     transition: none;
   }
 }

@@ -196,6 +196,7 @@ function wireShow(
 
   show.on('verdict', async (verdict) => {
     hud.hideRating();
+    hud.showReaction(verdict.reaction, verdict.heckle);
     stage.react(verdict.reaction);
     await crowd.play(verdict.reaction);
   });

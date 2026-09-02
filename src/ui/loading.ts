@@ -62,8 +62,24 @@ export class LoadingScreen {
     this.enter.hidden = false;
     this.enter.focus();
 
+    // A click on the marquee or the void steals focus; hand it back so the
+    // Enter key keeps meaning Enter.
+    const reclaim = (e: PointerEvent): void => {
+      if (!(e.target instanceof HTMLButtonElement)) {
+        this.enter.focus();
+      }
+    };
+    document.addEventListener('pointerdown', reclaim);
+
     return new Promise((resolve) => {
-      this.enter.addEventListener('click', () => resolve(), { once: true });
+      this.enter.addEventListener(
+        'click',
+        () => {
+          document.removeEventListener('pointerdown', reclaim);
+          resolve();
+        },
+        { once: true },
+      );
     });
   }
 
@@ -91,6 +107,7 @@ export class LoadingScreen {
 
     const percent = Math.round(total * 100);
     this.fill.style.width = `${percent}%`;
+    this.bar.setAttribute('aria-valuenow', String(percent));
     this.note.textContent = current ? `Loading ${percent}% · ${LABEL_BY_STEP[current]}` : `Loading ${percent}%`;
   }
 }

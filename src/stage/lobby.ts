@@ -13,6 +13,7 @@ const BOB_AMPLITUDE = 0.06;
 const BOB_HZ = 0.35;
 const SWAY_AMPLITUDE = 0.1; // rad
 const SWAY_HZ = 0.2;
+const REDUCED_MOTION = matchMedia('(prefers-reduced-motion: reduce)');
 
 /** Pre-show scene: the marquee floating in space while assets load. */
 export class Lobby {
@@ -43,6 +44,9 @@ export class Lobby {
   update(dt: number): void {
     this.elapsed += dt;
     this.marquee.update(dt);
+    if (REDUCED_MOTION.matches) {
+      return; // bulbs still chase; the sign and stars hold still
+    }
 
     const t = this.elapsed * Math.PI * 2;
     this.marquee.root.position.y = Math.sin(t * BOB_HZ) * BOB_AMPLITUDE;

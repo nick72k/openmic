@@ -16,6 +16,7 @@ const CLUB_FLOOR_SIZE = 40;
 const WINGS_X = -9; // off-screen even at CAMERA_FAR
 const CENTRE_X = 0;
 const WALK_SPEED = 2.5; // units/s; matches the Robot_Walking stride
+const REDUCED_MOTION = matchMedia('(prefers-reduced-motion: reduce)');
 const FILL_SKY = 0x8a6a5a;
 const FILL_GROUND = 0x201010;
 const FILL_INTENSITY = 0.5;
@@ -165,6 +166,11 @@ export class Stage {
     this.renderer.render(this.scene, this.camera);
   }
 
+  private placeCamera(position: THREE.Vector3): void {
+    this.camera.position.copy(position);
+    this.camera.lookAt(CAMERA_TARGET);
+  }
+
   private lobbyFrame(): void {
     if (!this.lobby) {
       return;
@@ -192,14 +198,17 @@ export class Stage {
       this.comic.root.position.x = THREE.MathUtils.lerp(fromX, toX, t);
     });
 
-    const dolly = this.tweens.run(
-      seconds,
-      (t) => {
-        this.camera.position.lerpVectors(cameraFrom, cameraTo, t);
-        this.camera.lookAt(CAMERA_TARGET);
-      },
-      smoothstep,
-    );
+    // Camera moves are the vestibular trigger; the walk itself is fine to keep.
+    const dolly = REDUCED_MOTION.matches
+      ? Promise.resolve(this.placeCamera(cameraTo))
+      : this.tweens.run(
+          seconds,
+          (t) => {
+            this.camera.position.lerpVectors(cameraFrom, cameraTo, t);
+            this.camera.lookAt(CAMERA_TARGET);
+          },
+          smoothstep,
+        );
 
     return Promise.all([stride, dolly]).then(() => undefined);
   }

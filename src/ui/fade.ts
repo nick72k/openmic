@@ -4,6 +4,7 @@ export enum Blackout {
 }
 
 const FADE_MS = 700; // keep in step with #fade's CSS transition
+const REDUCED_MOTION = matchMedia('(prefers-reduced-motion: reduce)');
 
 /** Fade the blackout layer in or out; resolves when the transition is done. */
 export function blackout(state: Blackout): Promise<void> {
@@ -12,5 +13,5 @@ export function blackout(state: Blackout): Promise<void> {
     return Promise.resolve();
   }
   layer.classList.toggle('on', state === Blackout.In);
-  return new Promise((resolve) => setTimeout(resolve, FADE_MS));
+  return new Promise((resolve) => setTimeout(resolve, REDUCED_MOTION.matches ? 0 : FADE_MS));
 }

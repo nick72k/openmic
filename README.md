@@ -1,13 +1,11 @@
 # OpenMic
 
 [![Live](https://img.shields.io/badge/live-openmic.72keys.xyz-FFD166?logo=googlechrome&logoColor=white)](https://openmic.72keys.xyz/)
-[![WebMCP](https://img.shields.io/badge/WebMCP-document.modelContext-FF9955)](https://webmachinelearning.github.io/webmcp/)
+[![WebMCP](https://img.shields.io/badge/WebMCP-spec-FF9955)](https://webmachinelearning.github.io/webmcp/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Vite](https://img.shields.io/badge/Vite-6-646CFF?logo=vite&logoColor=white)](https://vite.dev/)
 [![Three.js](https://img.shields.io/badge/Three.js-r170-000000?logo=threedotjs&logoColor=white)](https://threejs.org/)
 [![Piper](https://img.shields.io/badge/TTS-Piper-4B8BBE)](https://github.com/rhasspy/piper)
-[![Vitest](https://img.shields.io/badge/tests-vitest-6E9F18?logo=vitest&logoColor=white)](https://vitest.dev/)
-[![License: MIT](https://img.shields.io/badge/license-MIT-2EA043)](LICENSE)
 
 <p align="center"><img src="docs/marquee.png" width="596" alt="OpenMic marquee: OPENMIC, TONIGHT ONLY"></p>
 
@@ -85,8 +83,8 @@ shipped WASM. On a fresh clone, populate `public/vendor/` with:
 | Path | Files | From |
 |---|---|---|
 | `vendor/ort/` | `ort-wasm-simd.wasm`, `ort-wasm.wasm` | `node_modules/onnxruntime-web/dist/` |
-| `vendor/piper/` | `piper_phonemize.wasm`, `piper_phonemize.data` | `cdn.jsdelivr.net/npm/@diffusionstudio/piper-wasm@1.0.0/build/` |
-| `vendor/voices/en/en_US/kathleen/low/` | `en_US-kathleen-low.onnx`, `.onnx.json` | `huggingface.co/diffusionstudio/piper-voices` (same path) |
+| `vendor/piper/` | `piper_phonemize.wasm`, `piper_phonemize.data` | [jsdelivr: @diffusionstudio/piper-wasm@1.0.0/build/](https://cdn.jsdelivr.net/npm/@diffusionstudio/piper-wasm@1.0.0/build/) |
+| `vendor/voices/en/en_US/kathleen/low/` | `en_US-kathleen-low.onnx`, `.onnx.json` | [HuggingFace: diffusionstudio/piper-voices](https://huggingface.co/diffusionstudio/piper-voices/tree/main/en/en_US/kathleen/low) (same path) |
 
 `?voice=<id>` switches voices and `?fx=off` drops the robot effect, for any
 voice whose files sit under `vendor/voices/` at its upstream path. The
@@ -99,6 +97,16 @@ shading baked into vertex colours (`src/stage/curtain.ts`) and costs nothing
 to light. `src/stage/quality.ts` picks a tier from cores and memory (MSAA
 off and 1x pixel ratio on low-end hardware), then `AdaptiveResolution`
 steps the pixel ratio between 0.6x and the tier's cap to hold about 50 fps.
+
+## Accessibility
+
+Keyboard: `1` to `5` rate, `H` opens the heckle box, `E` encore, `D` done,
+`Esc` closes the scoreboard; every button shows its key. Focus follows the
+show (the reaction row when a joke lands, Encore when the set ends, Enter
+after Close). Jokes and crowd reactions are announced through live regions,
+and the crowd's reaction is also shown as text since the sound is the only
+other cue. `prefers-reduced-motion` drops the camera moves, the marquee
+sway and the blackout fade as well as the blinking.
 
 ## Dev
 
