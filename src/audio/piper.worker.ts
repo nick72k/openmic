@@ -7,7 +7,30 @@
  *   main ──{synth id,text}► worker: predict
  *        ◄──{audio id,wav}─  (ArrayBuffer transferred)
  */
-import { TtsSession, type Progress } from '@mintplex-labs/piper-tts-web';
+import { HF_BASE, TtsSession, type Progress } from '@mintplex-labs/piper-tts-web';
+
+/**
+ * Everything the voice needs is served from our own origin under /vendor
+ * (see README, "Voice"): the ONNX runtime, the phonemizer, and the voice
+ * model. The library only exposes the WASM paths, so voice downloads are
+ * redirected by wrapping fetch: the HuggingFace base becomes /vendor/voices.
+ */
+const VENDOR = `${self.location.origin}/vendor`;
+const WASM_PATHS = {
+  onnxWasm: `${VENDOR}/ort/`,
+  piperData: `${VENDOR}/piper/piper_phonemize.data`,
+  piperWasm: `${VENDOR}/piper/piper_phonemize.wasm`,
+};
+const VOICE_BASE = `${VENDOR}/voices`;
+
+const upstreamFetch = self.fetch.bind(self);
+self.fetch = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+  const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+  if (url.startsWith(HF_BASE)) {
+    return upstreamFetch(VOICE_BASE + url.slice(HF_BASE.length), init);
+  }
+  return upstreamFetch(input, init);
+};
 
 export type WorkerRequest =
   | { type: 'init'; voiceId: string }
@@ -34,7 +57,7 @@ function onProgress(progress: Progress): void {
 }
 
 async function init(voiceId: string): Promise<void> {
-  session = await TtsSession.create({ voiceId, progress: onProgress });
+  session = await TtsSession.create({ voiceId, progress: onProgress, wasmPaths: WASM_PATHS });
   post({ type: 'ready' });
 }
 

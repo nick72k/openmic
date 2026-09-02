@@ -3,3 +3,4 @@ dist/
 *.blend1
 .shot-*.png
 .preview.png
+public/vendor/
