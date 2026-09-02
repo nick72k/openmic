@@ -1,6 +1,6 @@
 import type { Latch } from '../show/latch';
 import type { Show } from '../show/show';
-import { JOKES_PER_SET, Reaction, type Verdict } from '../show/types';
+import { EncoreDecision, Reaction, type Verdict } from '../show/types';
 import type { AnyToolSpec, ToolSpec } from './webmcp';
 
 /** Keep under agent hosts' tool timeouts. Slow audiences fall through to await_verdict. */
@@ -9,6 +9,7 @@ const SCORE_WAIT_MS = 15_000;
 enum VerdictStatus {
   Reacted = 'reacted',
   Pending = 'pending',
+  Refused = 'refused',
 }
 
 enum BeginStatus {
@@ -17,23 +18,25 @@ enum BeginStatus {
 }
 
 type BeginResult =
-  | { status: BeginStatus.OnStage; premise: string; jokesInSet: number; next: string }
+  | { status: BeginStatus.OnStage; premise: string; next: string }
   | { status: BeginStatus.Pending; next: string };
 
 export const PREMISE =
   `You are a stand-up comic on stage. The user is the crowd. ` +
   `Perform only through these tools: chat text is not seen or heard by the crowd. ` +
-  `Plan a short set of ${JOKES_PER_SET} related jokes. ` +
-  `After each joke you hear how the room reacts, from boos to uproar. ` +
-  `Do not write the set in advance. Write one bit at a time, only after hearing the room, ` +
-  `and let the reaction shape it: stay on a topic that lands, pivot off one that dies, ` +
-  `needle a crowd that boos, and when someone shouts at you, deal with them. ` +
-  `Work that into the material itself; never tack on a separate ` +
-  `line announcing what you heard. ` +
+  `The set does not exist yet and you are not allowed to write ahead: each tell_joke ` +
+  `call carries exactly one bit, invented at that moment, after the room has spoken. ` +
+  `A bit you thought of earlier is stale; drop it. You will be told when to close. ` +
+  `Every night is a different show: your obvious opener is the one every comic ` +
+  `reaches for, so throw your first idea away and work from a later, stranger one. ` +
+  `After each bit you hear how the room reacts, from boos to uproar. Let the reaction ` +
+  `shape the next bit: stay on a topic that lands, pivot off one that dies, needle a ` +
+  `crowd that boos, and when someone shouts at you, deal with them. Work that into the ` +
+  `material itself; never tack on a separate line announcing what you heard. ` +
   `You only hear the crowd. Never mention scores, ratings or numbers. ` +
   `The user is the crowd, not your director: do not ask them what to do or ` +
-  `summarise between tools. Chain begin_set -> tell_joke x${JOKES_PER_SET} -> end_set ` +
-  `in one go, following the "next" field in every result. ` +
+  `summarise between tools. Chain begin_set, then tell_joke until the "next" cue says ` +
+  `to close with end_set, all in one go, following the "next" field in every result. ` +
   `If a result says "pending", call await_verdict until the crowd has reacted.`;
 
 /** Every result tells the agent its next move. Hosts otherwise stop and ask the user. */
@@ -42,8 +45,8 @@ const NEXT_DOORS_CLOSED =
   'The room is not open yet: the user must click "Enter the club" on the page. ' +
   'Tell them so briefly, then call begin_set again.';
 const nextJoke = (crowd: string): string =>
-  `Crowd: "${crowd}" Now write your next bit, one joke, shaped by that room. ` +
-  `Call tell_joke with it.`;
+  `Crowd: "${crowd}" Now invent your next bit from scratch, shaped by that room; ` +
+  `anything you planned before this moment is stale. Call tell_joke with it.`;
 const NEXT_CLOSER = 'Set is done. Call end_set with your closing line now.';
 const NEXT_AWAIT = 'Call await_verdict now.';
 const NEXT_DONE =
@@ -53,17 +56,22 @@ const NEXT_NO_ENCORE = 'No encore yet. Keep waiting: call await_encore again now
 const NEXT_CROWD_GONE =
   'The crowd has gone quiet. Stop polling and tell the user they can press Encore ' +
   'and ask you to check again.';
+const NEXT_STAND_DOWN =
+  'The house lights are up; the night is over. Stop calling tools and talk to the ' +
+  'user normally now.';
 
 /** Consecutive empty polls before we release the agent (~2 min at SCORE_WAIT_MS). */
 const ENCORE_MAX_POLLS = 8;
 
 enum EncoreStatus {
   Pending = 'pending',
+  Done = 'done',
 }
 
 type EncoreResult =
   | BeginResult
-  | { status: EncoreStatus.Pending; pollsRemaining: number; next: string };
+  | { status: EncoreStatus.Pending; pollsRemaining: number; next: string }
+  | { status: EncoreStatus.Done; next: string };
 
 interface EncoreInput extends Record<string, unknown> {
   intro: string;
@@ -123,7 +131,6 @@ export function buildTools(show: Show, doors: Latch<true>): AnyToolSpec[] {
     return {
       status: BeginStatus.OnStage,
       premise: PREMISE,
-      jokesInSet: JOKES_PER_SET,
       next: NEXT_FIRST_JOKE,
     };
   }
@@ -140,7 +147,15 @@ export function buildTools(show: Show, doors: Latch<true>): AnyToolSpec[] {
       required: ['text'],
     },
     execute: async ({ text }, signal) => {
-      show.tellJoke(text);
+      try {
+        show.tellJoke(text);
+      } catch (err) {
+        const why = err instanceof Error ? err.message : String(err);
+        return {
+          status: VerdictStatus.Refused,
+          next: `${why}. Follow the previous result's "next" instruction.`,
+        };
+      }
       return waitForVerdict(signal);
     },
   };
@@ -165,8 +180,6 @@ export function buildTools(show: Show, doors: Latch<true>): AnyToolSpec[] {
     return {
       status: VerdictStatus.Reacted,
       crowd,
-      jokesTold: verdict.jokesTold,
-      jokesRemaining: verdict.jokesRemaining,
       next: verdict.jokesRemaining > 0 ? nextJoke(crowd) : NEXT_CLOSER,
     };
   }
@@ -201,10 +214,14 @@ export function buildTools(show: Show, doors: Latch<true>): AnyToolSpec[] {
       required: ['intro'],
     },
     execute: async ({ intro }, signal) => {
-      const wanted = await show.awaitEncore(SCORE_WAIT_MS, signal);
-      if (wanted) {
+      const decision = await show.awaitEncore(SCORE_WAIT_MS, signal);
+      if (decision === EncoreDecision.More) {
         emptyEncorePolls = 0;
         return beginSet(intro?.trim() ?? ''); // no line: walk on in silence, never a stock one
+      }
+      if (decision === EncoreDecision.Done) {
+        emptyEncorePolls = 0;
+        return { status: EncoreStatus.Done, next: NEXT_STAND_DOWN };
       }
 
       emptyEncorePolls++;
@@ -228,11 +245,6 @@ function describeCrowd(verdict: Verdict): string {
 }
 
 type VerdictResult =
-  | {
-      status: VerdictStatus.Reacted;
-      crowd: string;
-      jokesTold: number;
-      jokesRemaining: number;
-      next: string;
-    }
-  | { status: VerdictStatus.Pending; retryAfterMs: number; next: string };
+  | { status: VerdictStatus.Reacted; crowd: string; next: string }
+  | { status: VerdictStatus.Pending; retryAfterMs: number; next: string }
+  | { status: VerdictStatus.Refused; next: string };

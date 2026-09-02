@@ -49,7 +49,49 @@ describe('tell_joke', () => {
   });
 });
 
+describe('tell_joke misuse', () => {
+  it('returns refused instead of throwing when called too early', async () => {
+    const show = new Show();
+    const doors = new Latch<true>();
+    doors.fire(true);
+    const tool = Object.fromEntries(buildTools(show, doors).map((t) => [t.name, t]));
+    void tool.begin_set.execute({ intro: 'hi' }, signal); // not awaited: still entering
+
+    const result = (await tool.tell_joke.execute({ text: 'too soon' }, signal)) as {
+      status: string;
+      next: string;
+    };
+
+    expect(result.status).toBe('refused');
+    expect(result.next.length).toBeGreaterThan(0);
+  });
+});
+
 describe('await_encore', () => {
+  it('tells the agent to stand down when the user is done', async () => {
+    const { show, tool } = await onStage();
+    await show.end('bye');
+
+    const pending = tool.await_encore.execute({ intro: 'more?' }, signal);
+    show.endNight();
+    const result = (await pending) as { status: string; next: string };
+
+    expect(result.status).toBe('done');
+    expect(result.next).toMatch(/talk to the user/i);
+  });
+
+  it('tells the agent to stand down when the user is done', async () => {
+    const { show, tool } = await onStage();
+    await show.end('bye');
+
+    const pending = tool.await_encore.execute({ intro: 'more?' }, signal);
+    show.endNight();
+    const result = (await pending) as { status: string; next: string };
+
+    expect(result.status).toBe('done');
+    expect(result.next).toMatch(/talk to the user/i);
+  });
+
   it('puts the comic back on stage; a missing intro is silence, not a stock line', async () => {
     const { show, tool } = await onStage();
     await show.end('bye');

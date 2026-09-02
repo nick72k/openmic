@@ -9,6 +9,7 @@ const RATING_LABELS: Readonly<Record<number, string>> = {
 };
 
 const HECKLE_LABEL = 'Heckle!';
+const ARMED_HINT = 'Goes out with your reaction:';
 
 /**
  * Caption + rating row. Emits scores; owns no show logic.
@@ -21,20 +22,26 @@ export class Hud {
   private rating: HTMLElement;
   private heckleRow: HTMLElement;
   private heckleInput: HTMLInputElement;
-  private encore: HTMLButtonElement;
+  private heckleHint: HTMLElement;
+  private heckleButton: HTMLButtonElement | null = null;
+  private curtainCall: HTMLElement;
 
   constructor(
     root: HTMLElement,
     onScore: (score: number, heckle?: string) => void,
     onEncore: () => void,
+    onDone: () => void,
   ) {
     this.caption = must(root.querySelector('#caption'));
     this.rating = must(root.querySelector('#rating'));
     this.heckleRow = must(root.querySelector('#heckle'));
     this.heckleInput = must(this.heckleRow.querySelector('input'));
+    this.heckleHint = must(this.heckleRow.querySelector('.hint'));
     this.heckleInput.maxLength = MAX_HECKLE_LENGTH;
-    this.encore = must(root.querySelector<HTMLButtonElement>('#encore'));
-    this.encore.addEventListener('click', onEncore);
+    this.heckleInput.addEventListener('input', () => this.showArmed());
+    this.curtainCall = must(root.querySelector('#curtain-call'));
+    must(root.querySelector<HTMLButtonElement>('#encore')).addEventListener('click', onEncore);
+    must(root.querySelector<HTMLButtonElement>('#done')).addEventListener('click', onDone);
 
     for (let s = MIN_SCORE; s <= MAX_SCORE; s++) {
       const button = document.createElement('button');
@@ -47,8 +54,10 @@ export class Hud {
     const heckle = document.createElement('button');
     heckle.textContent = HECKLE_LABEL;
     heckle.dataset.heckle = '';
+    heckle.setAttribute('aria-pressed', 'false');
     heckle.addEventListener('click', () => this.toggleHeckle());
     this.rating.appendChild(heckle);
+    this.heckleButton = heckle;
 
     this.hideRating();
     this.hideEncore();
@@ -69,6 +78,7 @@ export class Hud {
     this.rating.hidden = true;
     this.heckleRow.hidden = true;
     this.heckleInput.value = '';
+    this.showArmed();
   }
 
   private toggleHeckle(): void {
@@ -79,11 +89,19 @@ export class Hud {
   }
 
   showEncore(): void {
-    this.encore.hidden = false;
+    this.curtainCall.hidden = false;
   }
 
   hideEncore(): void {
-    this.encore.hidden = true;
+    this.curtainCall.hidden = true;
+  }
+
+  /** Armed indicator: hint under the box, pressed state on the button. */
+  private showArmed(): void {
+    const text = this.heckleInput.value.trim();
+    this.heckleHint.hidden = text === '';
+    this.heckleHint.textContent = text === '' ? '' : `${ARMED_HINT} "${text}"`;
+    this.heckleButton?.setAttribute('aria-pressed', String(text !== ''));
   }
 }
 

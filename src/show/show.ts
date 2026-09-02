@@ -1,5 +1,6 @@
 import { Latch } from './latch';
 import {
+  EncoreDecision,
   JOKES_PER_SET,
   MAX_HECKLE_LENGTH,
   MAX_SCORE,
@@ -33,7 +34,7 @@ export class Show {
   private phase = ShowPhase.Idle;
   private jokes: Joke[] = [];
   private verdict = new Latch<Verdict>();
-  private encore = new Latch<true>();
+  private encore = new Latch<EncoreDecision>();
   private listeners: { [K in keyof ShowEvents]: Listener<K>[] } = {
     phase: [],
     joke: [],
@@ -63,8 +64,8 @@ export class Show {
 
     this.jokes = [];
     this.encore.reset();
-    this.setPhase(ShowPhase.Intro);
-    return this.emit('intro', intro);
+    this.setPhase(ShowPhase.Entering);
+    return this.emit('intro', intro).then(() => this.setPhase(ShowPhase.Intro));
   }
 
   /** Delivers the joke. Returns immediately; poll with awaitVerdict. */
@@ -96,15 +97,24 @@ export class Show {
 
   /** Audience calls for more. Only meaningful between sets. */
   requestEncore(): void {
+    this.decide(EncoreDecision.More);
+  }
+
+  /** The user closes the night; waiting agents are released. */
+  endNight(): void {
+    this.decide(EncoreDecision.Done);
+  }
+
+  /** The crowd's decision, or null after timeoutMs or abort. */
+  awaitEncore(timeoutMs: number, signal?: AbortSignal): Promise<EncoreDecision | null> {
+    return this.encore.wait(timeoutMs, signal);
+  }
+
+  private decide(decision: EncoreDecision): void {
     if (this.phase !== ShowPhase.Idle) {
       return;
     }
-    this.encore.fire(true);
-  }
-
-  /** True once the crowd asks for an encore; false after timeoutMs or abort. */
-  async awaitEncore(timeoutMs: number, signal?: AbortSignal): Promise<boolean> {
-    return (await this.encore.wait(timeoutMs, signal)) === true;
+    this.encore.fire(decision);
   }
 
   /** Called by UI once the caption has been read out. */

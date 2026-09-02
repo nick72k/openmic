@@ -38,6 +38,10 @@ async function main(): Promise<void> {
       crowd.play(Reaction.Uproar);
       show.requestEncore();
     },
+    () => {
+      hud.hideEncore();
+      show.endNight();
+    },
   );
   const piper = new PiperSpeaker(...voiceOptions());
   const speaker = new FallbackSpeaker(piper, new WebSpeechSpeaker());

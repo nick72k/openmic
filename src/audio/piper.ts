@@ -33,6 +33,7 @@ export class PiperSpeaker implements Speaker {
   private readyPromise: Promise<void> | null = null;
   private isReady = false;
   private muted = false;
+  private speaking: Promise<void> = Promise.resolve();
 
   constructor(
     private voiceId = DEFAULT_VOICE_ID,
@@ -76,8 +77,17 @@ export class PiperSpeaker implements Speaker {
     return this.readyPromise;
   }
 
-  /** Never rejects: a sentence that fails to synthesise or play is skipped, not fatal. */
-  async speak(text: string): Promise<void> {
+  /**
+   * Never rejects: a sentence that fails to synthesise or play is skipped, not fatal.
+   * Speaks are serialised: a second call waits for the first, so lines can't overlap.
+   */
+  speak(text: string): Promise<void> {
+    const turn = this.speaking.then(() => this.speakNow(text));
+    this.speaking = turn;
+    return turn;
+  }
+
+  private async speakNow(text: string): Promise<void> {
     const generation = this.generation;
     const sentences = splitSentences(sanitizeForTts(text));
     if (sentences.length === 0) {

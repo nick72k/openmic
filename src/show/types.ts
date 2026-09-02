@@ -9,6 +9,7 @@ export const MAX_HECKLE_LENGTH = 120;
 
 export enum ShowPhase {
   Idle = 'idle',
+  Entering = 'entering', // walk-on and greeting still playing; no jokes yet
   Intro = 'intro',
   Telling = 'telling',
   AwaitingScore = 'awaiting-score',
@@ -32,6 +33,12 @@ export const REACTION_BY_SCORE: Readonly<Record<number, Reaction>> = {
   4: Reaction.Laughter,
   5: Reaction.Uproar,
 };
+
+/** How the night continues after a set: the crowd wants more, or the user is done. */
+export enum EncoreDecision {
+  More = 'more',
+  Done = 'done',
+}
 
 export interface Joke {
   index: number;
