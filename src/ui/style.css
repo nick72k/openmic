@@ -109,6 +109,10 @@ button:focus-visible {
   pointer-events: auto;
 }
 
+#rating button {
+  font-size: 0.85rem;
+}
+
 /* Score tint, boo to uproar. */
 #rating button[data-score='1'] { border-color: #e63946; color: #e63946; }
 #rating button[data-score='2'] { border-color: #f4a261; color: #f4a261; }
@@ -207,6 +211,9 @@ button:focus-visible {
 
 #controls button::before {
   content: '♪ ';
+  font-size: 1.5em;
+  line-height: 0;
+  vertical-align: -0.1em;
 }
 
 #controls button[aria-pressed='true'] {

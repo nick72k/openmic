@@ -2,7 +2,7 @@ import { MAX_HECKLE_LENGTH, MAX_SCORE, MIN_SCORE } from '../show/types';
 
 const RATING_LABELS: Readonly<Record<number, string>> = {
   1: 'Boo',
-  2: 'Meh',
+  2: '. . .',
   3: 'Heh',
   4: 'Ha!',
   5: 'HAHA',
@@ -14,7 +14,7 @@ const ARMED_HINT = 'Goes out with your reaction:';
 /**
  * Caption + rating row. Emits scores; owns no show logic.
  *
- *   [Boo] [Meh] [Heh] [Ha!] [HAHA] [Heckle!]
+ *   [Boo] [. . .] [Heh] [Ha!] [HAHA] [Heckle!]
  *   ┌ type a shout, then pick a reaction ─┐   <- shown by Heckle!, sent with the score
  */
 export class Hud {
