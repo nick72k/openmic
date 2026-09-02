@@ -95,6 +95,7 @@ async function main(): Promise<void> {
     stage.start();
     ambience.start();
     doors.fire(true);
+    hud.showCue();
 
     await new Promise<void>((resolve) => {
       leave = resolve;
@@ -106,6 +107,7 @@ async function main(): Promise<void> {
     hud.setCaption('');
     hud.hideRating();
     hud.hideEncore();
+    hud.hideCue();
     stage.returnToLobby();
     doors.reset();
     forgetEntered();
@@ -171,6 +173,7 @@ function wireShow(
   scoreboard: Scoreboard,
 ): void {
   show.on('intro', async (text) => {
+    hud.hideCue();
     hud.hideEncore();
     scoreboard.close();
     ambience.duck();

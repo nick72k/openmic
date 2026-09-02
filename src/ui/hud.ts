@@ -9,6 +9,8 @@ const RATING_LABELS: Readonly<Record<number, string>> = {
 };
 
 const HECKLE_LABEL = 'Heckle!';
+const CUE_COPIED = 'Copied';
+const CUE_COPY = 'Copy';
 const ARMED_HINT = 'Goes out with your reaction:';
 
 /**
@@ -25,6 +27,7 @@ export class Hud {
   private heckleHint: HTMLElement;
   private heckleButton: HTMLButtonElement | null = null;
   private curtainCall: HTMLElement;
+  private cue: HTMLElement;
 
   constructor(
     root: HTMLElement,
@@ -40,6 +43,8 @@ export class Hud {
     this.heckleInput.maxLength = MAX_HECKLE_LENGTH;
     this.heckleInput.addEventListener('input', () => this.showArmed());
     this.curtainCall = must(root.querySelector('#curtain-call'));
+    this.cue = must(root.querySelector('#cue'));
+    this.wireCueCopy();
     must(root.querySelector<HTMLButtonElement>('#encore')).addEventListener('click', onEncore);
     must(root.querySelector<HTMLButtonElement>('#done')).addEventListener('click', onDone);
 
@@ -61,7 +66,17 @@ export class Hud {
 
     this.hideRating();
     this.hideEncore();
+    this.hideCue();
     this.setCaption('');
+  }
+
+  /** Prompt to hand the agent, shown on an empty stage until the show starts. */
+  showCue(): void {
+    this.cue.hidden = false;
+  }
+
+  hideCue(): void {
+    this.cue.hidden = true;
   }
 
   /** Empty text hides the dialog box. */
@@ -94,6 +109,20 @@ export class Hud {
 
   hideEncore(): void {
     this.curtainCall.hidden = true;
+  }
+
+  private wireCueCopy(): void {
+    const button = must(this.cue.querySelector<HTMLButtonElement>('#cue-copy'));
+    const line = must(this.cue.querySelector('q')).textContent ?? '';
+    button.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(line);
+        button.textContent = CUE_COPIED;
+        setTimeout(() => (button.textContent = CUE_COPY), 1500);
+      } catch {
+        // clipboard blocked; the line is right there to select
+      }
+    });
   }
 
   /** Armed indicator: hint under the box, pressed state on the button. */
