@@ -3,7 +3,7 @@ import { Reaction } from '../show/types';
 import { Comic, ComicClip, PlayMode } from './comic';
 import { buildCurtain } from './curtain';
 import { Lobby } from './lobby';
-import { loadMicStand } from './props';
+import { loadMicStand, loadStool } from './props';
 import { AdaptiveResolution, QualityTier, detectTier } from './quality';
 import { Tweens, smoothstep } from './tween';
 
@@ -82,9 +82,9 @@ export class Stage {
   /** Load assets and compile shaders. The club is not drawn until start(). */
   async init(): Promise<void> {
     const spot = new THREE.Vector3(CENTRE_X, 0, 0);
-    const [, micStand] = await Promise.all([this.comic.load(), loadMicStand(spot)]);
+    const [, micStand, stool] = await Promise.all([this.comic.load(), loadMicStand(spot), loadStool()]);
     this.comic.root.position.x = WINGS_X;
-    this.scene.add(this.comic.root, micStand);
+    this.scene.add(this.comic.root, micStand, stool);
     await this.renderer.compileAsync(this.scene, this.camera);
   }
 
