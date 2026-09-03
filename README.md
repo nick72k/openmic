@@ -48,8 +48,10 @@ Each layer talks only to the one below it.
 ## Assets
 
 - `public/models/comic.glb`: [Animated Robot by Quaternius](https://quaternius.com)
-  (CC0). Clips used are listed in `src/stage/comic.ts` (`ComicClip`).
-  A placeholder capsule renders if the file is missing.
+  (CC0). Clips used are listed in `src/stage/comic.ts` (`ComicClip`), which
+  also nods the head with the live loudness of the voice (an analyser tap in
+  `src/audio/robotfx.ts`) so he moves while he talks. A placeholder capsule
+  renders if the file is missing.
 - `public/models/micstand.glb`, `public/models/marquee.glb`: built in Blender.
   The stand is placed by `src/stage/props.ts`; the marquee's bulbs alternate
   three materials (`BulbA/B/C`) so `src/stage/marquee.ts` can chase them by

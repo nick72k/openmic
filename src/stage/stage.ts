@@ -52,6 +52,7 @@ export class Stage {
   private tweens = new Tweens();
   private resolution: AdaptiveResolution;
   private lobby: Lobby | null = null;
+  private voiceLevel: () => number = () => 0;
 
   constructor(canvas: HTMLCanvasElement) {
     const tier = detectTier();
@@ -117,8 +118,17 @@ export class Stage {
     this.comic.play(ComicClip.Idle, PlayMode.Loop);
   }
 
+  /** Live loudness of the comic's voice, sampled each frame for the jaw. */
+  setVoiceLevel(source: () => number): void {
+    this.voiceLevel = source;
+  }
+
   startTalking(): void {
     this.comic.play(ComicClip.Talk, PlayMode.Loop);
+  }
+
+  stopTalking(): void {
+    this.comic.play(ComicClip.Idle, PlayMode.Loop);
   }
 
   react(reaction: Reaction): void {
@@ -162,6 +172,7 @@ export class Stage {
     const dt = this.clock.getDelta();
     this.resolution.sample(dt);
     this.tweens.step(dt);
+    this.comic.setMouth(this.voiceLevel());
     this.comic.update(dt);
     this.renderer.render(this.scene, this.camera);
   }

@@ -50,7 +50,11 @@ async function main(): Promise<void> {
   const scoreboard = new Scoreboard(byId('scoreboard'));
   const history = loadScores();
   let leave: (() => void) | null = null; // resolved when the scoreboard closes after Done
-  const piper = new PiperSpeaker(...voiceOptions());
+  const [voiceId, fx] = voiceOptions();
+  const piper = new PiperSpeaker(voiceId, fx);
+  if (fx) {
+    stage.setVoiceLevel(() => fx.level());
+  }
   const speaker = new FallbackSpeaker(piper, new WebSpeechSpeaker());
   const crowd = new Crowd();
   const ambience = new Ambience();
@@ -182,7 +186,9 @@ function wireShow(
       return; // walked on without a line
     }
     hud.setCaption(text);
+    stage.startTalking();
     await say(speaker, text);
+    stage.stopTalking();
   });
 
   show.on('joke', async (joke) => {
@@ -190,12 +196,14 @@ function wireShow(
     hud.setCaption(joke.text);
     stage.startTalking();
     await say(speaker, joke.text);
+    stage.stopTalking();
     show.readyForScore();
     hud.showRating();
   });
 
   show.on('verdict', async (verdict) => {
     hud.hideRating();
+    hud.setCaption('');
     hud.showReaction(verdict.reaction, verdict.heckle);
     stage.react(verdict.reaction);
     await crowd.play(verdict.reaction);
@@ -205,6 +213,7 @@ function wireShow(
     hud.setCaption(text);
     stage.startTalking();
     await say(speaker, text);
+    stage.stopTalking();
     await stage.bow();
     hud.setCaption('');
     ambience.restore();
