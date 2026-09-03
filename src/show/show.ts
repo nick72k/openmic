@@ -13,7 +13,7 @@ import {
   type Verdict,
 } from './types';
 
-export interface ShowEvents {
+interface ShowEvents {
   phase: (phase: ShowPhase) => void;
   joke: (joke: Joke) => void;
   verdict: (verdict: Verdict) => void;
@@ -49,10 +49,6 @@ export class Show {
 
   on<K extends keyof ShowEvents>(event: K, fn: Listener<K>): void {
     this.listeners[event].push(fn);
-  }
-
-  getPhase(): ShowPhase {
-    return this.phase;
   }
 
   jokesRemaining(): number {

@@ -1,6 +1,6 @@
-export type Easing = (t: number) => number;
+type Easing = (t: number) => number;
 
-export const linear: Easing = (t) => t;
+const linear: Easing = (t) => t;
 export const smoothstep: Easing = (t) => t * t * (3 - 2 * t);
 
 interface Active {

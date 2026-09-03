@@ -1,7 +1,7 @@
 /** Rough context cost of what the page hands the agent. ~4 bytes per token for English JSON. */
 const BYTES_PER_TOKEN = 4;
 
-export interface MeterTotals {
+interface MeterTotals {
   calls: number;
   resultBytes: number;
   schemaBytes: number;

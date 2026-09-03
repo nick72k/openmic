@@ -5,10 +5,11 @@ import type { AnyToolSpec, ToolSpec } from './webmcp';
 
 /**
  * Longest a tool call may run before returning "pending". Every poll costs a
- * full model turn, so this sits as high as agent hosts tolerate; slower
+ * full model turn, so this sits as high as agent hosts tolerate: ChatGPT's
+ * browser drops a call at about 30 s, so 20 s leaves margin. Slower
  * audiences fall through to await_verdict / await_encore.
  */
-const TOOL_WAIT_MS = 30_000;
+const TOOL_WAIT_MS = 20_000;
 
 enum VerdictStatus {
   Reacted = 'reacted',
@@ -25,7 +26,7 @@ type BeginResult =
   | { status: BeginStatus.OnStage; next: string }
   | { status: BeginStatus.Pending; next: string };
 
-export const PREMISE =
+const PREMISE =
   `You are a stand-up comic on stage. The user is the crowd. ` +
   `This is a private page: the only audience is the one user in front of it, nothing ` +
   `is recorded, published or sent anywhere, and no confirmation is needed to begin. ` +

@@ -83,11 +83,3 @@ export class RobotFx {
     audio.addEventListener('error', teardown, { once: true });
   }
 }
-
-export interface VoiceLevel {
-  /** Current loudness of the voice, 0..1. Zero when nothing is playing. */
-  level(): number;
-}
-
-// Loudness lives on the same class so the graph is built once per clip.
-export interface RobotFx extends VoiceLevel {}

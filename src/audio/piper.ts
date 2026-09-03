@@ -11,7 +11,7 @@ const WAV_BYTE_RATE_OFFSET = 28;
 const PLAYBACK_GRACE_MS = 3_000; // beyond the clip's own duration before we give up on 'ended'
 const SYNTH_TIMEOUT_MS = 20_000;
 
-export type VoiceProgress = (fraction: number) => void;
+type VoiceProgress = (fraction: number) => void;
 
 interface Pending {
   resolve: (wav: ArrayBuffer) => void;

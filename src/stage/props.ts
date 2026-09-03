@@ -5,7 +5,7 @@ const MIC_STAND_URL = '/models/micstand.glb';
 const MIC_STAND_SCALE = 1.05; // capsule at mouth height on the 0.5-scaled robot
 
 /** Stage left (+X) and a step toward the crowd, so it sits in front of the comic. */
-export const MIC_STAND_POSITION = new THREE.Vector3(0.6, 0, 1.0);
+const MIC_STAND_POSITION = new THREE.Vector3(0.6, 0, 1.0);
 
 /**
  * Static set dressing. Resolves to an empty group if the file is missing.
